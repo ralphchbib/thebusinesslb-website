@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import { anyone, adminOrEditor, adminOnly } from "../access";
+import { revalidateAfterChange, revalidateAfterDelete } from "../hooks/revalidate";
 
 export const FAQs: CollectionConfig = {
   slug: "faqs",
@@ -13,6 +14,10 @@ export const FAQs: CollectionConfig = {
     create: adminOrEditor,
     update: adminOrEditor,
     delete: adminOnly,
+  },
+  hooks: {
+    afterChange: [revalidateAfterChange],
+    afterDelete: [revalidateAfterDelete],
   },
   fields: [
     { name: "question", type: "text", required: true },

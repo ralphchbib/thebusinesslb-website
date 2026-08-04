@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import { anyone, adminOrEditor, adminOnly } from "../access";
+import { revalidateAfterChange, revalidateAfterDelete } from "../hooks/revalidate";
 
 const stringArrayField = (name: string, opts: { required?: boolean; minRows?: number } = {}) => ({
   name,
@@ -20,6 +21,10 @@ export const Services: CollectionConfig = {
     create: adminOrEditor,
     update: adminOrEditor,
     delete: adminOnly,
+  },
+  hooks: {
+    afterChange: [revalidateAfterChange],
+    afterDelete: [revalidateAfterDelete],
   },
   fields: [
     {

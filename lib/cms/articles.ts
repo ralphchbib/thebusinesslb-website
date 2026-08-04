@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getCms } from "./client";
 import type { Article, ArticleBlock } from "@/content/insights/types";
 import type { PayloadArticleDoc, PayloadArticleBlockType } from "./types";
@@ -39,7 +40,8 @@ function toArticle(doc: PayloadArticleDoc): Article {
   };
 }
 
-export async function getAllArticles(): Promise<Article[]> {
+// Wrapped in React's cache() — see the equivalent note in lib/cms/services.ts.
+export const getAllArticles = cache(async (): Promise<Article[]> => {
   const payload = await getCms();
   const result = await payload.find({
     collection: "articles",
@@ -50,14 +52,14 @@ export async function getAllArticles(): Promise<Article[]> {
   });
   const docs = result.docs as unknown as PayloadArticleDoc[];
   return docs.map(toArticle);
-}
+});
 
 export async function getRecentArticles(count: number): Promise<Article[]> {
   const all = await getAllArticles();
   return all.slice(0, count);
 }
 
-export async function getArticleBySlug(slug: string): Promise<Article | null> {
+export const getArticleBySlug = cache(async (slug: string): Promise<Article | null> => {
   const payload = await getCms();
   const result = await payload.find({
     collection: "articles",
@@ -67,9 +69,9 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
   });
   const doc = result.docs[0] as unknown as PayloadArticleDoc | undefined;
   return doc ? toArticle(doc) : null;
-}
+});
 
-export async function getPublishedArticleSlugs(): Promise<string[]> {
+export const getPublishedArticleSlugs = cache(async (): Promise<string[]> => {
   const payload = await getCms();
   const result = await payload.find({
     collection: "articles",
@@ -80,4 +82,4 @@ export async function getPublishedArticleSlugs(): Promise<string[]> {
   });
   const docs = result.docs as unknown as Pick<PayloadArticleDoc, "slug">[];
   return docs.map((d) => d.slug);
-}
+});

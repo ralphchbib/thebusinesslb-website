@@ -1,5 +1,6 @@
 import type { GlobalConfig } from "payload";
 import { anyone, adminOnly } from "../access";
+import { revalidateGlobalAfterChange } from "../hooks/revalidate";
 
 /**
  * Singleton. Also carries the Services Hub page copy (H1/intro/connect
@@ -12,6 +13,9 @@ export const SiteSettings: GlobalConfig = {
   access: {
     read: anyone,
     update: adminOnly,
+  },
+  hooks: {
+    afterChange: [revalidateGlobalAfterChange],
   },
   fields: [
     {

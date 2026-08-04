@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getCms } from "./client";
 import type { PayloadSiteSettingsDoc } from "./types";
 
@@ -25,7 +26,8 @@ export interface SiteSettingsData {
   servicesPricingTable: { name: string; covers: string; range: string }[];
 }
 
-export async function getSiteSettings(): Promise<SiteSettingsData> {
+// Wrapped in React's cache() — see the equivalent note in lib/cms/services.ts.
+export const getSiteSettings = cache(async (): Promise<SiteSettingsData> => {
   const payload = await getCms();
   const doc = (await payload.findGlobal({
     slug: "site-settings",
@@ -58,4 +60,4 @@ export async function getSiteSettings(): Promise<SiteSettingsData> {
       range: r.range,
     })),
   };
-}
+});

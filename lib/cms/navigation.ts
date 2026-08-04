@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getCms } from "./client";
 import type { PayloadNavigationItemDoc } from "./types";
 
@@ -14,7 +15,8 @@ export interface NavItem {
   href: string;
 }
 
-export async function getNavItems(menu: NavMenu): Promise<NavItem[]> {
+// Wrapped in React's cache() — see the equivalent note in lib/cms/services.ts.
+export const getNavItems = cache(async (menu: NavMenu): Promise<NavItem[]> => {
   const payload = await getCms();
   const result = await payload.find({
     collection: "navigation-items",
@@ -25,4 +27,4 @@ export async function getNavItems(menu: NavMenu): Promise<NavItem[]> {
   });
   const docs = result.docs as unknown as PayloadNavigationItemDoc[];
   return docs.map((d) => ({ label: d.label, href: d.href }));
-}
+});

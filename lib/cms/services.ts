@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getCms } from "./client";
 import { getFaqsByScope } from "./faqs";
 import type { ServiceContent } from "@/content/services/types";
@@ -53,7 +54,12 @@ function toServiceContent(
   };
 }
 
-export async function getAllServices(): Promise<ServiceContent[]> {
+// Wrapped in React's cache() so a single render pass — e.g. generateMetadata
+// and the page component both calling the same fetcher for the same route —
+// shares one Payload query instead of issuing it twice. Only functions
+// called with primitive (or no) arguments are wrapped; getServicesBySlugs
+// below takes an array, which cache() can't key on reliably.
+export const getAllServices = cache(async (): Promise<ServiceContent[]> => {
   const payload = await getCms();
   const result = await payload.find({
     collection: "services",
@@ -67,10 +73,10 @@ export async function getAllServices(): Promise<ServiceContent[]> {
     docs.map(async (doc) => toServiceContent(doc, await getFaqsByScope("service", doc.id))),
   );
   return withFaqs;
-}
+});
 
 /** Lightweight slug -> priceAnchor map for the client-side sticky action bar. */
-export async function getServicePriceMap(): Promise<Record<string, string>> {
+export const getServicePriceMap = cache(async (): Promise<Record<string, string>> => {
   const payload = await getCms();
   const result = await payload.find({
     collection: "services",
@@ -81,9 +87,9 @@ export async function getServicePriceMap(): Promise<Record<string, string>> {
   });
   const docs = result.docs as unknown as Pick<PayloadServiceDoc, "slug" | "priceAnchor">[];
   return Object.fromEntries(docs.map((d) => [d.slug, d.priceAnchor]));
-}
+});
 
-export async function getPublishedServiceSlugs(): Promise<string[]> {
+export const getPublishedServiceSlugs = cache(async (): Promise<string[]> => {
   const payload = await getCms();
   const result = await payload.find({
     collection: "services",
@@ -95,9 +101,9 @@ export async function getPublishedServiceSlugs(): Promise<string[]> {
   });
   const docs = result.docs as unknown as Pick<PayloadServiceDoc, "slug">[];
   return docs.map((d) => d.slug);
-}
+});
 
-export async function getServiceBySlug(slug: string): Promise<ServiceContent | null> {
+export const getServiceBySlug = cache(async (slug: string): Promise<ServiceContent | null> => {
   const payload = await getCms();
   const result = await payload.find({
     collection: "services",
@@ -109,7 +115,7 @@ export async function getServiceBySlug(slug: string): Promise<ServiceContent | n
   if (!doc) return null;
   const faqs = await getFaqsByScope("service", doc.id);
   return toServiceContent(doc, faqs);
-}
+});
 
 export async function getServicesBySlugs(slugs: string[]): Promise<ServiceContent[]> {
   if (slugs.length === 0) return [];

@@ -1,13 +1,15 @@
+import { cache } from "react";
 import type { Where } from "payload";
 import { getCms } from "./client";
 import type { PayloadFaqDoc } from "./types";
 
 export type FaqScope = "global" | "service" | "assessment" | "contact" | "pricing";
 
-export async function getFaqsByScope(
+// Wrapped in React's cache() — see the equivalent note in lib/cms/services.ts.
+export const getFaqsByScope = cache(async (
   scope: FaqScope,
   serviceId?: number | string,
-): Promise<{ question: string; answer: string }[]> {
+): Promise<{ question: string; answer: string }[]> => {
   const payload = await getCms();
   const where: Where =
     scope === "service" && serviceId
@@ -23,4 +25,4 @@ export async function getFaqsByScope(
   });
   const docs = result.docs as unknown as PayloadFaqDoc[];
   return docs.map((d) => ({ question: d.question, answer: d.answer }));
-}
+});
