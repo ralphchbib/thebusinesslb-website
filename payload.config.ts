@@ -2,14 +2,13 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { buildConfig } from "payload";
 import { postgresAdapter } from "@payloadcms/db-postgres";
-import { lexicalEditor } from "@payloadcms/richtext-lexical";
 
-import { Users } from "./payload/collections/Users";
-import { Services } from "./payload/collections/Services";
-import { Articles } from "./payload/collections/Articles";
-import { FAQs } from "./payload/collections/FAQs";
-import { Navigation } from "./payload/collections/Navigation";
-import { SiteSettings } from "./payload/globals/SiteSettings";
+import { Users } from "@/payload/collections/Users";
+import { Services } from "@/payload/collections/Services";
+import { Articles } from "@/payload/collections/Articles";
+import { FAQs } from "@/payload/collections/FAQs";
+import { Navigation } from "@/payload/collections/Navigation";
+import { SiteSettings } from "@/payload/globals/SiteSettings";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -21,7 +20,11 @@ export default buildConfig({
   },
   collections: [Users, Services, Articles, FAQs, Navigation],
   globals: [SiteSettings],
-  editor: lexicalEditor(),
+  // No collection here uses a `richText` field (long copy uses `textarea`,
+  // matching the plain-string content model already in content/*.ts), so
+  // no default editor is configured — keeps the dependency footprint
+  // smaller and avoids an ESM/CJS loader incompatibility between Payload's
+  // CLI and @payloadcms/richtext-lexical under Node 24.
   typescript: {
     outputFile: path.resolve(dirname, "payload/payload-types.ts"),
   },
