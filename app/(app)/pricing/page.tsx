@@ -6,7 +6,9 @@ import { Section } from "@/components/blocks/section";
 import { Reveal } from "@/components/motion/reveal";
 import { Button } from "@/components/ui/button";
 import { WhatsAppLink } from "@/components/whatsapp-link";
-import { servicesHub, serviceOrder, services } from "@/content/services";
+import { getAllServices } from "@/lib/cms/services";
+import { getFaqsByScope } from "@/lib/cms/faqs";
+import { getSiteSettings } from "@/lib/cms/site-settings";
 import { FaqBlock } from "@/components/blocks/faq-block";
 
 export const metadata: Metadata = buildMetadata({
@@ -16,7 +18,13 @@ export const metadata: Metadata = buildMetadata({
   path: "/pricing/",
 });
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const [allServices, faqs, settings] = await Promise.all([
+    getAllServices(),
+    getFaqsByScope("pricing"),
+    getSiteSettings(),
+  ]);
+
   return (
     <>
       <Breadcrumb items={[{ name: "Pricing" }]} />
@@ -42,7 +50,7 @@ export default function PricingPage() {
               </tr>
             </thead>
             <tbody>
-              {servicesHub.pricing.map((row) => (
+              {settings.servicesPricingTable.map((row) => (
                 <tr key={row.name} className="border-b border-n200">
                   <td className="py-4 pr-4 font-semibold text-ink">{row.name}</td>
                   <td className="py-4 pr-4 text-n600">{row.covers}</td>
@@ -60,24 +68,21 @@ export default function PricingPage() {
           By service
         </p>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {serviceOrder.map((slug) => {
-            const svc = services[slug];
-            return (
-              <Reveal key={slug}>
-                <div className="h-full rounded-lg border border-n200 bg-mist p-6">
-                  <p className="text-lg font-semibold text-ink">{svc.h1}</p>
-                  <p className="font-display mt-2 text-2xl font-medium text-petrol">{svc.priceAnchor}</p>
-                  <p className="mt-1 text-sm text-n500">{svc.timelineSummary}</p>
-                  <Link
-                    href={`/services/${svc.slug}/`}
-                    className="mt-4 inline-block text-sm font-semibold text-petrol"
-                  >
-                    See packages &rarr;
-                  </Link>
-                </div>
-              </Reveal>
-            );
-          })}
+          {allServices.map((svc) => (
+            <Reveal key={svc.slug}>
+              <div className="h-full rounded-lg border border-n200 bg-mist p-6">
+                <p className="text-lg font-semibold text-ink">{svc.h1}</p>
+                <p className="font-display mt-2 text-2xl font-medium text-petrol">{svc.priceAnchor}</p>
+                <p className="mt-1 text-sm text-n500">{svc.timelineSummary}</p>
+                <Link
+                  href={`/services/${svc.slug}/`}
+                  className="mt-4 inline-block text-sm font-semibold text-petrol"
+                >
+                  See packages &rarr;
+                </Link>
+              </div>
+            </Reveal>
+          ))}
         </div>
       </Section>
 
@@ -98,7 +103,7 @@ export default function PricingPage() {
         </div>
       </Section>
 
-      <FaqBlock faqs={servicesHub.faqs} eyebrow="Questions" h2="About pricing" />
+      <FaqBlock faqs={faqs} eyebrow="Questions" h2="About pricing" />
     </>
   );
 }

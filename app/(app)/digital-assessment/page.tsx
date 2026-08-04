@@ -10,6 +10,7 @@ import { Reveal } from "@/components/motion/reveal";
 import { FaqBlock } from "@/components/blocks/faq-block";
 import { AssessmentForm } from "@/components/forms/assessment-form";
 import { assessment } from "@/content/assessment";
+import { getFaqsByScope } from "@/lib/cms/faqs";
 
 export const metadata: Metadata = buildMetadata({
   title: assessment.metaTitle,
@@ -17,7 +18,8 @@ export const metadata: Metadata = buildMetadata({
   path: "/digital-assessment/",
 });
 
-export default function DigitalAssessmentPage() {
+export default async function DigitalAssessmentPage() {
+  const faqs = await getFaqsByScope("assessment");
   const jsonLd = [
     serviceSchema({
       name: "Digital Business Assessment",
@@ -25,7 +27,7 @@ export default function DigitalAssessmentPage() {
       path: "/digital-assessment/",
     }),
     breadcrumbSchema([{ name: "Digital Business Assessment", path: "/digital-assessment/" }]),
-    faqSchema(assessment.faqs),
+    faqSchema(faqs),
   ];
 
   return (
@@ -132,7 +134,7 @@ export default function DigitalAssessmentPage() {
         </div>
       </Section>
 
-      <FaqBlock faqs={assessment.faqs} eyebrow="Questions" h2="Before you apply" surface="mist" />
+      <FaqBlock faqs={faqs} eyebrow="Questions" h2="Before you apply" surface="mist" />
     </>
   );
 }

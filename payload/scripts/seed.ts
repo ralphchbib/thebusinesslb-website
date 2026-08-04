@@ -226,7 +226,7 @@ async function main() {
   // ---------- Site Settings (global, single row) ----------
   const [settingsRow] = await sql`
     insert into cms.site_settings
-      (site_name, slogan, service_statement, contact_email, whatsapp_number,
+      (site_name, slogan, service_statement, contact_email, whatsapp_number, address,
        instagram_handle, instagram_url,
        footer_slogan, footer_services_line, footer_copyright,
        newsletter_heading, newsletter_sub, newsletter_consent,
@@ -234,7 +234,8 @@ async function main() {
        updated_at, created_at)
     values
       (${siteConfig.name}, ${siteConfig.slogan}, ${siteConfig.serviceStatement}, ${siteConfig.email},
-       ${siteConfig.whatsappNumber}, ${siteConfig.instagramHandle}, ${siteConfig.instagramUrl},
+       ${siteConfig.whatsappNumber}, ${siteConfig.location},
+       ${siteConfig.instagramHandle}, ${siteConfig.instagramUrl},
        'Where Business Happens.', 'Websites. E-commerce. Social Media. AI. Consulting.',
        '© 2026 THE BUSINESS lb',
        'One useful email, twice a month.',

@@ -13,7 +13,7 @@ import { InsightsRow } from "@/components/blocks/insights-row";
 import { FinalCta } from "@/components/blocks/final-cta";
 import { FaqBlock } from "@/components/blocks/faq-block";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { faq } from "@/content/home";
+import { getFaqsByScope } from "@/lib/cms/faqs";
 
 export const metadata: Metadata = buildMetadata({
   title: "THE BUSINESS lb — Digital Growth for Lebanese Businesses",
@@ -22,7 +22,8 @@ export const metadata: Metadata = buildMetadata({
   path: "/",
 });
 
-export default function Home() {
+export default async function Home() {
+  const faq = await getFaqsByScope("global");
   return (
     <>
       <Hero />

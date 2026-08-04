@@ -6,6 +6,8 @@ import { Footer } from "@/components/layout/footer";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
 import { siteConfig } from "@/lib/config";
 import { organizationSchema } from "@/lib/seo/schema-org";
+import { getNavItems } from "@/lib/cms/navigation";
+import { getServicePriceMap } from "@/lib/cms/services";
 
 const bodoni = Bodoni_Moda({
   subsets: ["latin"],
@@ -41,11 +43,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [primaryNav, megaMenuServices, megaMenuStartHere, servicePrices] = await Promise.all([
+    getNavItems("header_primary"),
+    getNavItems("header_mega_col1"),
+    getNavItems("header_mega_col2"),
+    getServicePriceMap(),
+  ]);
+
   return (
     <html
       lang="en"
@@ -62,12 +71,16 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        <Header />
+        <Header
+          primaryNav={primaryNav}
+          megaMenuServices={megaMenuServices}
+          megaMenuStartHere={megaMenuStartHere}
+        />
         <main id="main" className="flex-1 pb-16 md:pb-0">
           {children}
         </main>
         <Footer />
-        <StickyActionBar />
+        <StickyActionBar servicePrices={servicePrices} />
       </body>
     </html>
   );

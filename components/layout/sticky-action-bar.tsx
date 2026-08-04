@@ -4,14 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { whatsappLink } from "@/lib/config";
-import { services } from "@/content/services";
 
-export function StickyActionBar() {
+export function StickyActionBar({ servicePrices }: { servicePrices: Record<string, string> }) {
   const pathname = usePathname();
   if (!pathname || pathname.startsWith("/contact")) return null;
 
   const slug = pathname.match(/^\/services\/([^/]+)\/?$/)?.[1];
-  const priceAnchor = slug ? services[slug]?.priceAnchor : undefined;
+  const priceAnchor = slug ? servicePrices[slug] : undefined;
 
   // On the assessment page itself, the CTA should jump straight to the form
   // instead of "navigating" to the page the visitor is already reading.

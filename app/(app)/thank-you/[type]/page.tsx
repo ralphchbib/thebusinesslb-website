@@ -7,7 +7,7 @@ import { WhatsAppLink } from "@/components/whatsapp-link";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { thankYouAssessment } from "@/content/assessment";
 import { thankYouContact, thankYouSubscribe } from "@/content/contact";
-import { articles } from "@/content/insights";
+import { getRecentArticles } from "@/lib/cms/articles";
 
 const VALID_TYPES = ["assessment", "contact", "subscribe"] as const;
 type ThankYouType = (typeof VALID_TYPES)[number];
@@ -42,6 +42,7 @@ export default async function ThankYouPage({
   if (!VALID_TYPES.includes(type as ThankYouType)) notFound();
 
   if (type === "assessment") {
+    const articles = await getRecentArticles(3);
     return (
       <>
         <Section surface="white" className="text-center">

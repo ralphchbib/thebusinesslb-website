@@ -5,10 +5,10 @@ import { Card } from "@/components/ui/card";
 import { Eyebrow } from "@/components/motion/eyebrow";
 import { Reveal } from "@/components/motion/reveal";
 import { insights } from "@/content/home";
-import { articles } from "@/content/insights";
+import { getRecentArticles } from "@/lib/cms/articles";
 
-export function InsightsRow() {
-  const featured = articles.slice(0, 3);
+export async function InsightsRow() {
+  const featured = await getRecentArticles(3);
   if (featured.length === 0) return null;
 
   return (

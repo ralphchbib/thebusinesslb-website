@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getService, serviceOrder } from "@/content/services";
+import { getServiceBySlug, getPublishedServiceSlugs } from "@/lib/cms/services";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { breadcrumbSchema, faqSchema, serviceSchema } from "@/lib/seo/schema-org";
 import { Breadcrumb } from "@/components/blocks/breadcrumb";
@@ -15,8 +15,9 @@ import { RelatedServices } from "@/components/blocks/related-services";
 import { Section } from "@/components/blocks/section";
 import { Button } from "@/components/ui/button";
 
-export function generateStaticParams() {
-  return serviceOrder.map((slug) => ({ slug }));
+export async function generateStaticParams() {
+  const slugs = await getPublishedServiceSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
@@ -25,7 +26,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const service = getService(slug);
+  const service = await getServiceBySlug(slug);
   if (!service) return {};
   return buildMetadata({
     title: service.metaTitle,
@@ -36,7 +37,7 @@ export async function generateMetadata({
 
 export default async function ServicePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const service = getService(slug);
+  const service = await getServiceBySlug(slug);
   if (!service) notFound();
 
   const jsonLd = [

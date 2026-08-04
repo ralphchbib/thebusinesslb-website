@@ -8,11 +8,12 @@ import { siteConfig } from "@/lib/config";
 import { Breadcrumb } from "@/components/blocks/breadcrumb";
 import { Section } from "@/components/blocks/section";
 import { Card } from "@/components/ui/card";
-import { getArticle, articles } from "@/content/insights";
-import { getService } from "@/content/services";
+import { getArticleBySlug, getPublishedArticleSlugs } from "@/lib/cms/articles";
+import { getServicesBySlugs } from "@/lib/cms/services";
 
-export function generateStaticParams() {
-  return articles.map((a) => ({ slug: a.slug }));
+export async function generateStaticParams() {
+  const slugs = await getPublishedArticleSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
@@ -21,7 +22,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const article = getArticle(slug);
+  const article = await getArticleBySlug(slug);
   if (!article) return {};
   return buildMetadata({
     title: article.metaTitle,
@@ -32,7 +33,7 @@ export async function generateMetadata({
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const article = getArticle(slug);
+  const article = await getArticleBySlug(slug);
   if (!article) notFound();
 
   const jsonLd = [
@@ -51,7 +52,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     ]),
   ];
 
-  const related = article.relatedServices.map(getService).filter(Boolean);
+  const related = await getServicesBySlugs(article.relatedServices);
 
   return (
     <>

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { servicesHub, serviceOrder, services } from "@/content/services";
+import { getAllServices } from "@/lib/cms/services";
+import { getFaqsByScope } from "@/lib/cms/faqs";
+import { getSiteSettings } from "@/lib/cms/site-settings";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { Breadcrumb } from "@/components/blocks/breadcrumb";
 import { Section } from "@/components/blocks/section";
@@ -12,44 +14,51 @@ import { Reveal } from "@/components/motion/reveal";
 import { Eyebrow } from "@/components/motion/eyebrow";
 import { Button } from "@/components/ui/button";
 
+// Not CMS-managed in Phase 1 — Site Settings covers the hub's body copy,
+// but not a general per-page SEO field set (only Services/Articles have
+// their own metaTitle/metaDescription). See CMS-IMPACT-REPORT.md.
 export const metadata: Metadata = buildMetadata({
-  title: servicesHub.metaTitle,
-  description: servicesHub.metaDescription,
+  title: "Digital Services for Lebanese Businesses | THE BUSINESS lb",
+  description:
+    "Websites, Shopify stores, social media, AI automation and business consulting for Lebanese SMEs. One partner across the whole digital growth journey.",
   path: "/services/",
 });
 
-export default function ServicesHubPage() {
+export default async function ServicesHubPage() {
+  const [allServices, hubFaqs, settings] = await Promise.all([
+    getAllServices(),
+    getFaqsByScope("pricing"),
+    getSiteSettings(),
+  ]);
+
   return (
     <>
       <Breadcrumb items={[{ name: "Services" }]} />
 
       <Section surface="white">
         <h1 className="font-display max-w-3xl text-[32px] font-medium tracking-[-0.02em] text-ink md:text-[44px]">
-          {servicesHub.h1}
+          {settings.servicesHubH1}
         </h1>
-        <p className="measure-lead mt-5 text-lg leading-relaxed text-n600">{servicesHub.intro}</p>
+        <p className="measure-lead mt-5 text-lg leading-relaxed text-n600">{settings.servicesHubIntro}</p>
       </Section>
 
       <Section surface="mist">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {serviceOrder.map((slug) => {
-            const svc = services[slug];
-            return (
-              <Reveal key={slug}>
-                <Card className="h-full bg-white">
-                  <Link href={`/services/${slug}/`} className="flex h-full flex-col">
-                    {svc.eyebrow && <Badge className="mb-3 w-fit">{svc.eyebrow}</Badge>}
-                    <h3 className="text-lg font-semibold text-ink">{svc.h1}</h3>
-                    <p className="mt-2 text-sm font-medium text-petrol">{svc.priceAnchor}</p>
-                    <p className="mt-3 flex-1 text-sm leading-relaxed text-n600">{svc.intro}</p>
-                    <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-petrol">
-                      See what&rsquo;s included <ArrowRight className="h-3.5 w-3.5" />
-                    </span>
-                  </Link>
-                </Card>
-              </Reveal>
-            );
-          })}
+          {allServices.map((svc) => (
+            <Reveal key={svc.slug}>
+              <Card className="h-full bg-white">
+                <Link href={`/services/${svc.slug}/`} className="flex h-full flex-col">
+                  {svc.eyebrow && <Badge className="mb-3 w-fit">{svc.eyebrow}</Badge>}
+                  <h3 className="text-lg font-semibold text-ink">{svc.h1}</h3>
+                  <p className="mt-2 text-sm font-medium text-petrol">{svc.priceAnchor}</p>
+                  <p className="mt-3 flex-1 text-sm leading-relaxed text-n600">{svc.intro}</p>
+                  <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-petrol">
+                    See what&rsquo;s included <ArrowRight className="h-3.5 w-3.5" />
+                  </span>
+                </Link>
+              </Card>
+            </Reveal>
+          ))}
         </div>
       </Section>
 
@@ -57,9 +66,9 @@ export default function ServicesHubPage() {
         <Reveal>
           <Eyebrow>Most clients follow the same path</Eyebrow>
           <h2 className="font-display mt-3.5 max-w-3xl text-[26px] font-medium tracking-[-0.02em] text-ink md:text-[34px]">
-            {servicesHub.connect.h2}
+            {settings.servicesHubConnectH2}
           </h2>
-          <p className="measure-lead mt-4 text-[17px] leading-relaxed text-n700">{servicesHub.connect.body}</p>
+          <p className="measure-lead mt-4 text-[17px] leading-relaxed text-n700">{settings.servicesHubConnectBody}</p>
         </Reveal>
       </Section>
 
@@ -78,7 +87,7 @@ export default function ServicesHubPage() {
               </tr>
             </thead>
             <tbody>
-              {servicesHub.pricing.map((row) => (
+              {settings.servicesPricingTable.map((row) => (
                 <tr key={row.name} className="border-b border-n200">
                   <td className="py-4 pr-4 font-semibold text-ink">{row.name}</td>
                   <td className="py-4 pr-4 text-n600">{row.covers}</td>
@@ -97,7 +106,7 @@ export default function ServicesHubPage() {
         </Button>
       </Section>
 
-      <FaqBlock faqs={servicesHub.faqs} />
+      <FaqBlock faqs={hubFaqs} />
     </>
   );
 }

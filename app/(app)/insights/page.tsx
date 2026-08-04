@@ -7,7 +7,8 @@ import { Section } from "@/components/blocks/section";
 import { Card } from "@/components/ui/card";
 import { Reveal } from "@/components/motion/reveal";
 import { NewsletterForm } from "@/components/forms/newsletter-form";
-import { articles } from "@/content/insights";
+import { getAllArticles } from "@/lib/cms/articles";
+import { getSiteSettings } from "@/lib/cms/site-settings";
 
 export const metadata: Metadata = buildMetadata({
   title: "Insights — Practical Digital Growth Reading | THE BUSINESS lb",
@@ -16,7 +17,8 @@ export const metadata: Metadata = buildMetadata({
   path: "/insights/",
 });
 
-export default function InsightsPage() {
+export default async function InsightsPage() {
+  const [articles, settings] = await Promise.all([getAllArticles(), getSiteSettings()]);
   return (
     <>
       <Breadcrumb items={[{ name: "Insights" }]} />
@@ -54,7 +56,12 @@ export default function InsightsPage() {
 
       <Section surface="ink">
         <div className="mx-auto max-w-md text-center">
-          <NewsletterForm dark />
+          <NewsletterForm
+            dark
+            heading={settings.newsletterHeading}
+            sub={settings.newsletterSub}
+            consent={settings.newsletterConsent}
+          />
         </div>
       </Section>
     </>

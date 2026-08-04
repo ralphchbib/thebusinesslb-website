@@ -11,6 +11,7 @@ import { FaqBlock } from "@/components/blocks/faq-block";
 import { WhatsAppLink } from "@/components/whatsapp-link";
 import { siteConfig } from "@/lib/config";
 import { contact } from "@/content/contact";
+import { getFaqsByScope } from "@/lib/cms/faqs";
 
 export const metadata: Metadata = buildMetadata({
   title: contact.metaTitle,
@@ -18,7 +19,8 @@ export const metadata: Metadata = buildMetadata({
   path: "/contact/",
 });
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const faqs = await getFaqsByScope("contact");
   return (
     <>
       <Breadcrumb items={[{ name: "Contact" }]} />
@@ -100,7 +102,7 @@ export default function ContactPage() {
         </Reveal>
       </Section>
 
-      <FaqBlock faqs={contact.faqs} />
+      <FaqBlock faqs={faqs} />
     </>
   );
 }
