@@ -24,21 +24,33 @@ if (!payloadSecret) {
 }
 
 // Payload's admin panel and REST/GraphQL API are served from the same
-// Next.js app as the public site (no separate deployment). serverURL is
-// used to build absolute links (e.g. in password-reset email), so it's set
-// to the real production domain whenever NODE_ENV is "production" —
-// falling back to the local dev server's origin otherwise (`next dev`).
+// Next.js app as the public site (no separate deployment).
 //
-// cors/csrf are deliberately NOT derived from NODE_ENV alone: `next start`
-// (used to test a production build locally, and by Vercel preview
-// deployments) also sets NODE_ENV=production while the browser's actual
-// origin is still localhost/preview, not the production domain. Payload's
-// CSRF check rejects every admin mutation (403) if the request's Origin
-// isn't in this list, regardless of what serverURL resolves to — so both
-// candidate origins are trusted explicitly, in every environment.
+// serverURL matters for more than cors/csrf: Payload's getRequestOrigin()
+// (node_modules/payload/dist/utilities/getRequestOrigin.js) returns
+// config.serverURL verbatim, with total precedence over the actual
+// request's Origin/Host header, whenever it's set. It's what builds every
+// absolute link Payload emails out — e.g. the password-reset link — so
+// getting this wrong doesn't just risk a CORS error, it puts the wrong
+// domain directly into a real outbound email.
+//
+// NODE_ENV alone can't distinguish "actually deployed to Vercel" from
+// "npm run start, testing a production build locally" — both set
+// NODE_ENV=production. Using it here previously sent password-reset links
+// to the real production domain even when testing locally, 404ing because
+// that domain has no deployment of this branch. VERCEL_ENV is only ever
+// set by Vercel's own build/runtime, so it's used instead: real weight is
+// only given to the production domain when a real Vercel production
+// deployment is confirmed. Everything else — `next dev`, `next start`
+// locally, and (unchanged from before) Vercel preview deployments — uses
+// localhost.
 const productionURL = siteConfig.url;
 const localURL = "http://localhost:3000";
-const serverURL = process.env.NODE_ENV === "production" ? productionURL : localURL;
+const serverURL = process.env.VERCEL_ENV === "production" ? productionURL : localURL;
+// cors/csrf stay origin-agnostic across environments regardless of
+// serverURL: `next start` and Vercel preview deployments both set
+// NODE_ENV=production while serving from a different origin than the
+// production domain, so both candidate origins are trusted explicitly.
 const trustedOrigins = [productionURL, localURL];
 
 export default buildConfig({
