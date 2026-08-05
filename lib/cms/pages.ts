@@ -22,14 +22,6 @@ function toPageData(doc: PayloadPageDoc): PageData {
 }
 
 /**
- * Deliberately does not pass `draft: true` — Payload's default find/findByID
- * behavior for a drafts-enabled collection already returns only the
- * published version. `_status: { equals: "published" }` is added anyway as
- * an explicit, visible filter matching the convention every other function
- * in this directory already follows (isPublished: { equals: true } on
- * Services/Articles), rather than relying solely on an implicit default.
- */
-/**
  * Rejects reserved slugs before ever querying the database. This is a
  * structural backstop, not just belt-and-suspenders on top of
  * Pages.slug's validate function: a branch review proved that a
@@ -41,6 +33,14 @@ function toPageData(doc: PayloadPageDoc): PageData {
  * direct DB write, a future integration bypassing Payload's access
  * control), this ensures getPageBySlug itself would still refuse to
  * serve the colliding content rather than compounding the problem.
+ *
+ * Also deliberately does not pass `draft: true` to payload.find() —
+ * Payload's default find/findByID behavior for a drafts-enabled
+ * collection already returns only the published version.
+ * `_status: { equals: "published" }` is added anyway as an explicit,
+ * visible filter matching the convention every other function in this
+ * directory follows (isPublished: { equals: true } on Services/Articles),
+ * rather than relying solely on an implicit default.
  */
 export const getPageBySlug = cache(async (slug: string): Promise<PageData | null> => {
   if (isReservedSlug(slug)) return null;
