@@ -9,6 +9,7 @@ import { Services } from "@/payload/collections/Services";
 import { Articles } from "@/payload/collections/Articles";
 import { FAQs } from "@/payload/collections/FAQs";
 import { Navigation } from "@/payload/collections/Navigation";
+import { Pages } from "@/payload/collections/Pages";
 import { SiteSettings } from "@/payload/globals/SiteSettings";
 import { siteConfig } from "@/lib/config";
 
@@ -61,7 +62,7 @@ export default buildConfig({
   admin: {
     user: Users.slug,
   },
-  collections: [Users, Services, Articles, FAQs, Navigation],
+  collections: [Users, Services, Articles, FAQs, Navigation, Pages],
   globals: [SiteSettings],
   graphQL: {
     // This is Payload's own default — set explicitly so the production/

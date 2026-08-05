@@ -122,3 +122,52 @@ export interface PayloadSiteSettingsDoc {
   servicesHubConnectBody?: string | null;
   servicesPricingTable?: { id?: string; name: string; covers: string; range: string }[] | null;
 }
+
+// Phase 2 foundation — see PHASE2-ARCHITECTURE.md. Hero/Text/Cta only;
+// deliberately not the full block library from the architecture doc.
+export interface PayloadHeroBlockDoc {
+  id?: string;
+  blockType: "hero";
+  isVisible?: boolean | null;
+  eyebrow?: string | null;
+  h1: string;
+  sub?: string | null;
+  ctaPrimaryLabel?: string | null;
+  ctaPrimaryHref?: string | null;
+  ctaSecondaryLabel?: string | null;
+  ctaSecondaryHref?: string | null;
+  reassurance?: string | null;
+}
+
+export interface PayloadTextBlockDoc {
+  id?: string;
+  blockType: "text";
+  isVisible?: boolean | null;
+  eyebrow?: string | null;
+  h2?: string | null;
+  body: string;
+}
+
+export interface PayloadCtaBlockDoc {
+  id?: string;
+  blockType: "cta";
+  isVisible?: boolean | null;
+  h2: string;
+  body?: string | null;
+  buttonLabel: string;
+  buttonHref: string;
+  surface?: "white" | "mist" | "veil" | "ink" | null;
+}
+
+export type PayloadPageBlockDoc = PayloadHeroBlockDoc | PayloadTextBlockDoc | PayloadCtaBlockDoc;
+
+export interface PayloadPageDoc {
+  id: number;
+  title: string;
+  slug: string;
+  pageType: "landing" | "campaign" | "seasonal";
+  seoTitle: string;
+  seoDescription: string;
+  blocks?: PayloadPageBlockDoc[] | null;
+  _status?: "draft" | "published" | null;
+}
