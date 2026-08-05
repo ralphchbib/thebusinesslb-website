@@ -87,6 +87,12 @@ npm run build        PASS — 30 routes, all static pages generated, middleware 
 - Confirmed the earlier nonce-based CSP attempt was rejected only after being empirically disproven (zero `nonce` attributes in rendered HTML, dozens of blocked inline scripts) — not assumed to fail, and not shipped once proven not to work.
 - `npm audit --omit=dev` re-run after installing `@vercel/analytics`/`@vercel/speed-insights` — confirmed identical vulnerability count (17) to before, i.e. no new vulnerabilities introduced by this change.
 
+**Post-deploy verification, against the real live Vercel production deployment (not just the local build):**
+
+- All 5 headers confirmed present on `https://www.thebusinesslb.com/` via `curl -I`, byte-identical to what was verified locally.
+- `/admin/`, `/services/`, `/services/shopify-ecommerce/`, `/insights/`, `/pricing/`, `/contact/`, `/digital-assessment/` all return `200`; `/api/graphql-playground` still correctly returns `404`.
+- Browsed the live homepage and the live `/admin/` login page directly (real Vercel infrastructure, not `next start`) — zero console errors on either, confirming the CSP behaves identically on the actual deployment as it did in local verification.
+
 ## 5. What was deliberately not touched
 
 Per the explicit scope: no page builder, no site redesign, no changes to any of the 5 Payload collections, no database schema changes. `payload/collections/*.ts`, `payload/globals/SiteSettings.ts`, and the `public`/`cms` schema structure are untouched — confirmed via `git diff` before commit.
