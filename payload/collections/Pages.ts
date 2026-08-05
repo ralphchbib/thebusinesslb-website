@@ -4,27 +4,7 @@ import { revalidatePageAfterChange, revalidatePageAfterDelete } from "../hooks/r
 import { HeroBlock } from "../blocks/Hero";
 import { TextBlock } from "../blocks/Text";
 import { CtaBlock } from "../blocks/Cta";
-
-/**
- * Single-segment paths already served by app/(app)/* (or by the (payload)
- * route group). A page using one of these slugs would save successfully
- * but could never be reached — Next.js always resolves a literal route
- * over the app/(app)/[slug]/page.tsx catch-all — so this is blocked at
- * save time rather than letting an editor discover it by trial and error.
- */
-const RESERVED_SLUGS = new Set([
-  "services",
-  "insights",
-  "pricing",
-  "about",
-  "contact",
-  "digital-assessment",
-  "privacy-policy",
-  "terms",
-  "thank-you",
-  "admin",
-  "api",
-]);
+import { isReservedSlug } from "@/lib/cms/reserved-slugs";
 
 /**
  * Phase 2 foundation only — Hero, Text, and Cta are deliberately the only
@@ -79,9 +59,12 @@ export const Pages: CollectionConfig = {
       required: true,
       unique: true,
       admin: { description: "URL segment — /{slug}/. Cannot be a path already used by the site." },
+      // This is one of two independent layers now — see
+      // lib/cms/reserved-slugs.ts for why a second, structural layer was
+      // added after this one alone was proven insufficient.
       validate: (value: string | null | undefined) => {
         if (!value) return "Slug is required.";
-        if (RESERVED_SLUGS.has(value.toLowerCase())) {
+        if (isReservedSlug(value)) {
           return `"${value}" is already used by an existing page on the site and can't be reused here.`;
         }
         return true;
