@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { siteConfig } from "@/lib/config";
 import { getPublishedServiceSlugs } from "@/lib/cms/services";
 import { getPublishedArticleSlugs } from "@/lib/cms/articles";
+import { getPublishedPageSlugs } from "@/lib/cms/pages";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteConfig.url;
@@ -21,14 +22,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/terms/",
   ];
 
-  const [serviceSlugs, articleSlugs] = await Promise.all([
+  const [serviceSlugs, articleSlugs, pageSlugs] = await Promise.all([
     getPublishedServiceSlugs(),
     getPublishedArticleSlugs(),
+    getPublishedPageSlugs(),
   ]);
   const serviceRoutes = serviceSlugs.map((slug) => `/services/${slug}/`);
   const articleRoutes = articleSlugs.map((slug) => `/insights/${slug}/`);
+  const pageRoutes = pageSlugs.map((slug) => `/${slug}/`);
 
-  return [...staticRoutes, ...serviceRoutes, ...articleRoutes].map((path) => ({
+  return [...staticRoutes, ...serviceRoutes, ...articleRoutes, ...pageRoutes].map((path) => ({
     url: `${base}${path}`,
     lastModified: now,
     changeFrequency: path === "" ? "weekly" : "monthly",

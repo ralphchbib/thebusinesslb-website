@@ -49,3 +49,35 @@ export const revalidateGlobalAfterChange: GlobalAfterChangeHook = ({ doc }) => {
   revalidateSite();
   return doc;
 };
+
+/**
+ * Pages (unlike Services/Navigation/Site Settings) are not fetched by the
+ * shared root layout, so a site-wide revalidation would be needlessly
+ * broad — only the page's own path, plus the sitemap, ever change when a
+ * Page is edited.
+ */
+function revalidatePaths(paths: string[]) {
+  for (const path of paths) {
+    try {
+      revalidatePath(path);
+    } catch (err) {
+      console.error(`[cms:revalidate:error] path=${path}`, err);
+    }
+  }
+}
+
+export const revalidatePageAfterChange: CollectionAfterChangeHook = ({ doc, previousDoc }) => {
+  const paths = [`/${doc.slug}/`, "/sitemap.xml"];
+  // Revalidate the old URL too if the slug changed, so it stops serving
+  // stale cached content instead of a 404 once the rename takes effect.
+  if (previousDoc?.slug && previousDoc.slug !== doc.slug) {
+    paths.push(`/${previousDoc.slug}/`);
+  }
+  revalidatePaths(paths);
+  return doc;
+};
+
+export const revalidatePageAfterDelete: CollectionAfterDeleteHook = ({ doc }) => {
+  revalidatePaths([`/${doc.slug}/`, "/sitemap.xml"]);
+  return doc;
+};
