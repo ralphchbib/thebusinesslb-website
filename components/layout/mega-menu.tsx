@@ -2,9 +2,17 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { megaMenuServices, megaMenuStartHere } from "@/content/site";
+import type { NavItem } from "@/lib/cms/navigation";
 
-export function MegaMenu({ onNavigate }: { onNavigate?: () => void }) {
+export function MegaMenu({
+  services,
+  startHere,
+  onNavigate,
+}: {
+  services: NavItem[];
+  startHere: NavItem[];
+  onNavigate?: () => void;
+}) {
   return (
     <div className="border-t border-n200 bg-white shadow-tb-3">
       <div className="mx-auto grid max-w-content grid-cols-2 gap-12 px-6 py-10 lg:px-10">
@@ -14,7 +22,7 @@ export function MegaMenu({ onNavigate }: { onNavigate?: () => void }) {
             What we do
           </p>
           <ul className="grid grid-cols-1 gap-1">
-            {megaMenuServices.map((item) => (
+            {services.map((item) => (
               <li key={item.href}>
                 <Link
                   href={item.href}
@@ -33,7 +41,7 @@ export function MegaMenu({ onNavigate }: { onNavigate?: () => void }) {
             Start here
           </p>
           <ul className="mb-4 grid grid-cols-1 gap-1">
-            {megaMenuStartHere.map((item) => (
+            {startHere.map((item) => (
               <li key={item.href}>
                 <Link
                   href={item.href}

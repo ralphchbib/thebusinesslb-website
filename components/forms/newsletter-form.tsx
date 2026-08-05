@@ -6,13 +6,30 @@ import { usePathname } from "next/navigation";
 import { subscribeNewsletterAction, type FormState } from "@/lib/actions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { newsletter } from "@/content/site";
+import { newsletter as newsletterDefaults } from "@/content/site";
 
 const initialState: FormState = { status: "idle" };
 
-export function NewsletterForm({ dark = true }: { dark?: boolean }) {
+export function NewsletterForm({
+  dark = true,
+  heading,
+  sub,
+  consent,
+}: {
+  dark?: boolean;
+  /** Defaults to the static copy in content/site.ts if not passed — callers
+   *  that fetch Site Settings from the CMS should pass these explicitly. */
+  heading?: string;
+  sub?: string;
+  consent?: string;
+}) {
   const [state, formAction, pending] = useActionState(subscribeNewsletterAction, initialState);
   const pathname = usePathname();
+  const newsletter = {
+    heading: heading ?? newsletterDefaults.heading,
+    sub: sub ?? newsletterDefaults.sub,
+    consent: consent ?? newsletterDefaults.consent,
+  };
 
   if (state.status === "success") {
     return (

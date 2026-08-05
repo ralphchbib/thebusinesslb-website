@@ -7,10 +7,18 @@ import { Logo } from "./logo";
 import { MegaMenu } from "./mega-menu";
 import { MobileDrawer } from "./mobile-drawer";
 import { Button } from "@/components/ui/button";
-import { nav } from "@/content/site";
 import { cn } from "@/lib/utils";
+import type { NavItem } from "@/lib/cms/navigation";
 
-export function Header() {
+export function Header({
+  primaryNav,
+  megaMenuServices,
+  megaMenuStartHere,
+}: {
+  primaryNav: NavItem[];
+  megaMenuServices: NavItem[];
+  megaMenuStartHere: NavItem[];
+}) {
   const [condensed, setCondensed] = React.useState(false);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [drawerOpen, setDrawerOpen] = React.useState(false);
@@ -72,23 +80,27 @@ export function Header() {
                 onClick={() => setMenuOpen((v) => !v)}
                 className="rounded-md px-4 py-2 text-[15px] font-medium text-ink transition-colors hover:bg-mist"
               >
-                {nav.services}
+                Services
               </button>
               {menuOpen && (
                 <div className="fixed inset-x-0 top-[72px]" onMouseEnter={openMenu} onMouseLeave={closeMenu}>
-                  <MegaMenu onNavigate={() => setMenuOpen(false)} />
+                  <MegaMenu
+                    services={megaMenuServices}
+                    startHere={megaMenuStartHere}
+                    onNavigate={() => setMenuOpen(false)}
+                  />
                 </div>
               )}
             </div>
-            <Link href="/insights/" className="rounded-md px-4 py-2 text-[15px] font-medium text-ink transition-colors hover:bg-mist">
-              {nav.insights}
-            </Link>
-            <Link href="/about/" className="rounded-md px-4 py-2 text-[15px] font-medium text-ink transition-colors hover:bg-mist">
-              {nav.about}
-            </Link>
-            <Link href="/contact/" className="rounded-md px-4 py-2 text-[15px] font-medium text-ink transition-colors hover:bg-mist">
-              {nav.contact}
-            </Link>
+            {primaryNav.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rounded-md px-4 py-2 text-[15px] font-medium text-ink transition-colors hover:bg-mist"
+              >
+                {item.label}
+              </Link>
+            ))}
           </nav>
 
           <div className="flex items-center gap-3">
@@ -115,7 +127,12 @@ export function Header() {
         />
       )}
 
-      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <MobileDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        primaryNav={primaryNav}
+        megaMenuServices={megaMenuServices}
+      />
     </>
   );
 }

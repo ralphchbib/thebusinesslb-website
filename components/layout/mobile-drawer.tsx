@@ -3,11 +3,21 @@
 import * as React from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
-import { megaMenuServices } from "@/content/site";
 import { whatsappLink, siteConfig } from "@/lib/config";
 import { Button } from "@/components/ui/button";
+import type { NavItem } from "@/lib/cms/navigation";
 
-export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function MobileDrawer({
+  open,
+  onClose,
+  primaryNav,
+  megaMenuServices,
+}: {
+  open: boolean;
+  onClose: () => void;
+  primaryNav: NavItem[];
+  megaMenuServices: NavItem[];
+}) {
   React.useEffect(() => {
     if (!open) return;
     document.body.style.overflow = "hidden";
@@ -60,15 +70,18 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
         <Link href="/pricing/" onClick={onClose} className="flex min-h-12 items-center border-b border-n200 text-lg font-semibold text-ink">
           Pricing
         </Link>
-        <Link href="/insights/" onClick={onClose} className="flex min-h-12 items-center border-b border-n200 text-lg font-semibold text-ink">
-          Insights
-        </Link>
-        <Link href="/about/" onClick={onClose} className="flex min-h-12 items-center border-b border-n200 text-lg font-semibold text-ink">
-          About
-        </Link>
-        <Link href="/contact/" onClick={onClose} className="flex min-h-12 items-center text-lg font-semibold text-ink">
-          Contact
-        </Link>
+        {primaryNav.map((item, i) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onClose}
+            className={`flex min-h-12 items-center text-lg font-semibold text-ink ${
+              i < primaryNav.length - 1 ? "border-b border-n200" : ""
+            }`}
+          >
+            {item.label}
+          </Link>
+        ))}
 
         <Button asChild size="lg" className="mt-6 w-full">
           <Link href="/digital-assessment/" onClick={onClose}>
