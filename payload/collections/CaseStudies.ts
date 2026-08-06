@@ -92,14 +92,15 @@ export const CaseStudies: CollectionConfig = {
     },
     {
       name: "featuredImage",
-      type: "text",
-      admin: { description: "Path or URL to the main image for this case study." },
+      type: "upload",
+      relationTo: "media",
+      admin: { description: "The main image for this case study. Also used as its social-share (Open Graph) image." },
     },
     {
       name: "gallery",
       type: "array",
       admin: { description: "Additional images, optional." },
-      fields: [{ name: "image", type: "text", required: true }],
+      fields: [{ name: "image", type: "upload", relationTo: "media", required: true }],
     },
     {
       name: "featured",

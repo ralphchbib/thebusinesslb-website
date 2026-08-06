@@ -10,7 +10,7 @@ export interface Testimonial {
   industry?: string;
   quote: string;
   rating: number;
-  logo?: string;
+  logo?: { url: string; alt: string; width?: number; height?: number };
   website?: string;
 }
 
@@ -23,18 +23,30 @@ function toTestimonial(doc: PayloadTestimonialDoc): Testimonial {
     industry: doc.industry || undefined,
     quote: doc.quote,
     rating: doc.rating,
-    logo: doc.logo || undefined,
+    logo:
+      typeof doc.logo === "object" && doc.logo
+        ? {
+            url: doc.logo.url,
+            alt: doc.logo.alt,
+            width: doc.logo.width ?? undefined,
+            height: doc.logo.height ?? undefined,
+          }
+        : undefined,
     website: doc.website || undefined,
   };
 }
 
+// depth: 1 — logo is a Media relationship; populating it here means every
+// caller gets a ready-to-render {url, alt} without a separate resolve
+// step, the same tradeoff lib/cms/case-studies.ts already makes for
+// servicesUsed/testimonial.
 export const getTestimonials = cache(async (): Promise<Testimonial[]> => {
   const payload = await getCms();
   const result = await payload.find({
     collection: "testimonials",
     where: { _status: { equals: "published" } },
     sort: "displayOrder",
-    depth: 0,
+    depth: 1,
     limit: 100,
   });
   const docs = result.docs as unknown as PayloadTestimonialDoc[];
@@ -47,7 +59,7 @@ export const getFeaturedTestimonials = cache(async (): Promise<Testimonial[]> =>
     collection: "testimonials",
     where: { _status: { equals: "published" }, featured: { equals: true } },
     sort: "displayOrder",
-    depth: 0,
+    depth: 1,
     limit: 100,
   });
   const docs = result.docs as unknown as PayloadTestimonialDoc[];
@@ -67,7 +79,7 @@ export const getTestimonialsByIds = cache(async (ids: (number | string)[]): Prom
   const result = await payload.find({
     collection: "testimonials",
     where: { id: { in: ids }, _status: { equals: "published" } },
-    depth: 0,
+    depth: 1,
     limit: ids.length,
   });
   const docs = result.docs as unknown as PayloadTestimonialDoc[];

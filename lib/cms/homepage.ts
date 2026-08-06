@@ -1,8 +1,16 @@
 import { cache } from "react";
 import { getCms } from "./client";
 import { getServicesByIds } from "./services";
-import type { PayloadHomepageDoc } from "./types";
+import type { PayloadHomepageDoc, PayloadMediaDoc } from "./types";
 import type { ServiceContent } from "@/content/services/types";
+
+// Phase 4B — resolves a Media relationship to a plain {url, alt} pair.
+// Kept deliberately lean (no width/height) since Hero/Founder both render
+// via next/image's `fill` mode, which doesn't need them.
+function resolveMediaImage(media: number | PayloadMediaDoc | null | undefined): { url: string; alt: string } | undefined {
+  if (typeof media !== "object" || !media) return undefined;
+  return { url: media.url, alt: media.alt };
+}
 
 export interface HomepageServiceCard {
   service: ServiceContent;
@@ -90,8 +98,17 @@ export const getHomepage = cache(async (): Promise<HomepageData> => {
   const payload = await getCms();
   const doc = (await payload.findGlobal({
     slug: "homepage",
-    depth: 0,
+    // depth: 1 — populates heroImage/founderImage/ogImage (Media
+    // relationships) and servicesCards[].service directly. servicesCards
+    // is still re-resolved via getServicesByIds below regardless, since
+    // that returns the full ServiceContent shape (with packages/FAQs/etc.)
+    // this depth-1 population alone wouldn't include.
+    depth: 1,
   })) as unknown as PayloadHomepageDoc;
+
+  const heroImage = resolveMediaImage(doc.heroImage);
+  const founderImage = resolveMediaImage(doc.founderImage);
+  const ogImage = resolveMediaImage(doc.ogImage);
 
   const serviceIds = (doc.servicesCards ?? []).map((c) => (typeof c.service === "object" ? c.service.id : c.service));
   const resolvedServices = await getServicesByIds(serviceIds);
@@ -125,8 +142,8 @@ export const getHomepage = cache(async (): Promise<HomepageData> => {
       ctaSecondaryLabel: doc.heroCtaSecondaryLabel,
       ctaSecondaryHref: doc.heroCtaSecondaryHref,
       reassurance: doc.heroReassurance || undefined,
-      image: doc.heroImage,
-      imageAlt: doc.heroImageAlt,
+      image: heroImage?.url ?? "",
+      imageAlt: heroImage?.alt ?? "",
     },
     problem: {
       eyebrow: doc.problemEyebrow || undefined,
@@ -154,8 +171,8 @@ export const getHomepage = cache(async (): Promise<HomepageData> => {
       title: doc.founderTitle,
       quote: doc.founderQuote,
       body: doc.founderBody,
-      image: doc.founderImage,
-      imageAlt: doc.founderImageAlt,
+      image: founderImage?.url ?? "",
+      imageAlt: founderImage?.alt ?? "",
       ctaLabel: doc.founderCtaLabel,
       ctaHref: doc.founderCtaHref,
     },
@@ -182,7 +199,7 @@ export const getHomepage = cache(async (): Promise<HomepageData> => {
     seo: {
       metaTitle: doc.metaTitle,
       metaDescription: doc.metaDescription,
-      ogImage: doc.ogImage || undefined,
+      ogImage: ogImage?.url,
     },
   };
 });

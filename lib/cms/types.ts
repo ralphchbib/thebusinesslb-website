@@ -176,6 +176,17 @@ export type PayloadIndustry =
   | "startup"
   | "other";
 
+// Phase 4B — Media Library. See MEDIA-ARCHITECTURE.md. `width`/`height`
+// are Payload's own auto-captured upload metadata (set at upload time via
+// sharp), always present on an image doc regardless of query depth.
+export interface PayloadMediaDoc {
+  id: number;
+  url: string;
+  alt: string;
+  width?: number | null;
+  height?: number | null;
+}
+
 export interface PayloadTestimonialDoc {
   id: number;
   clientName: string;
@@ -185,7 +196,7 @@ export interface PayloadTestimonialDoc {
   quote: string;
   rating: number;
   featured?: boolean | null;
-  logo?: string | null;
+  logo?: number | PayloadMediaDoc | null;
   website?: string | null;
   displayOrder?: number | null;
   _status?: "draft" | "published" | null;
@@ -208,8 +219,8 @@ export interface PayloadCaseStudyDoc {
   solution: string;
   results?: PayloadCaseStudyResultDoc[] | null;
   testimonial?: number | PayloadTestimonialDoc | null;
-  featuredImage?: string | null;
-  gallery?: { id?: string; image: string }[] | null;
+  featuredImage?: number | PayloadMediaDoc | null;
+  gallery?: { id?: string; image: number | PayloadMediaDoc }[] | null;
   featured?: boolean | null;
   seoTitle: string;
   seoDescription: string;
@@ -273,8 +284,7 @@ export interface PayloadHomepageDoc {
   heroCtaSecondaryLabel: string;
   heroCtaSecondaryHref: string;
   heroReassurance?: string | null;
-  heroImage: string;
-  heroImageAlt: string;
+  heroImage: number | PayloadMediaDoc;
 
   problemEyebrow?: string | null;
   problemTitle: string;
@@ -298,8 +308,7 @@ export interface PayloadHomepageDoc {
   founderTitle: string;
   founderQuote: string;
   founderBody: string;
-  founderImage: string;
-  founderImageAlt: string;
+  founderImage: number | PayloadMediaDoc;
   founderCtaLabel: string;
   founderCtaHref: string;
 
@@ -321,5 +330,5 @@ export interface PayloadHomepageDoc {
 
   metaTitle: string;
   metaDescription: string;
-  ogImage?: string | null;
+  ogImage?: number | PayloadMediaDoc | null;
 }

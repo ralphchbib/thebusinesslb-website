@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -11,12 +12,15 @@ export function CaseStudyCard({ caseStudy }: { caseStudy: CaseStudy }) {
     <Card className="h-full bg-white" ruleColor="petrol">
       <Link href={`/case-studies/${slug}/`} className="flex h-full flex-col">
         {featuredImage && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={featuredImage}
-            alt={title}
-            className="-mx-6 -mt-6 mb-4 aspect-[16/9] w-[calc(100%+3rem)] rounded-t-lg object-cover md:-mx-8 md:-mt-8 md:mb-5 md:w-[calc(100%+4rem)]"
-          />
+          <div className="relative -mx-6 -mt-6 mb-4 aspect-[16/9] w-[calc(100%+3rem)] overflow-hidden rounded-t-lg md:-mx-8 md:-mt-8 md:mb-5 md:w-[calc(100%+4rem)]">
+            <Image
+              src={featuredImage.url}
+              alt={featuredImage.alt || title}
+              fill
+              sizes="(min-width: 768px) 400px, 100vw"
+              className="object-cover"
+            />
+          </div>
         )}
         {industry && <p className="eyebrow mb-2">{industry.replace("_", " ")}</p>}
         <h3 className="text-lg font-semibold text-ink">{title}</h3>
