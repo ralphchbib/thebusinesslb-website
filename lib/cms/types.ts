@@ -159,7 +159,87 @@ export interface PayloadCtaBlockDoc {
   surface?: "white" | "mist" | "veil" | "ink" | null;
 }
 
-export type PayloadPageBlockDoc = PayloadHeroBlockDoc | PayloadTextBlockDoc | PayloadCtaBlockDoc;
+// Phase 3 — Testimonials + Case Studies. Reuses the same industry/sector
+// taxonomy already canonical for Services and the assessment intake form
+// (lib/validation/schemas.ts's sectorValues) rather than inventing a new
+// list.
+export type PayloadIndustry =
+  | "food_mouneh"
+  | "fashion"
+  | "beauty"
+  | "restaurants"
+  | "tourism"
+  | "retail"
+  | "professional_services"
+  | "real_estate"
+  | "exporter"
+  | "startup"
+  | "other";
+
+export interface PayloadTestimonialDoc {
+  id: number;
+  clientName: string;
+  companyName?: string | null;
+  position?: string | null;
+  industry?: PayloadIndustry | null;
+  quote: string;
+  rating: number;
+  featured?: boolean | null;
+  logo?: string | null;
+  website?: string | null;
+  displayOrder?: number | null;
+  _status?: "draft" | "published" | null;
+}
+
+export interface PayloadCaseStudyResultDoc {
+  id?: string;
+  metric: string;
+  value: string;
+}
+
+export interface PayloadCaseStudyDoc {
+  id: number;
+  title: string;
+  slug: string;
+  clientName: string;
+  industry?: PayloadIndustry | null;
+  servicesUsed?: (number | { slug: string; h1: string })[] | null;
+  challenge: string;
+  solution: string;
+  results?: PayloadCaseStudyResultDoc[] | null;
+  testimonial?: number | PayloadTestimonialDoc | null;
+  featuredImage?: string | null;
+  gallery?: { id?: string; image: string }[] | null;
+  featured?: boolean | null;
+  seoTitle: string;
+  seoDescription: string;
+  _status?: "draft" | "published" | null;
+}
+
+export interface PayloadTestimonialsBlockDoc {
+  id?: string;
+  blockType: "testimonialsBlock";
+  isVisible?: boolean | null;
+  eyebrow?: string | null;
+  h2?: string | null;
+  testimonials?: (number | PayloadTestimonialDoc)[] | null;
+}
+
+export interface PayloadCaseStudiesBlockDoc {
+  id?: string;
+  blockType: "caseStudiesBlock";
+  isVisible?: boolean | null;
+  eyebrow?: string | null;
+  h2?: string | null;
+  caseStudies?: (number | PayloadCaseStudyDoc)[] | null;
+}
+
+export type PayloadPageBlockDoc =
+  | PayloadHeroBlockDoc
+  | PayloadTextBlockDoc
+  | PayloadCtaBlockDoc
+  | PayloadTestimonialsBlockDoc
+  | PayloadCaseStudiesBlockDoc;
 
 export interface PayloadPageDoc {
   id: number;

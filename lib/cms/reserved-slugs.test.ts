@@ -20,7 +20,7 @@ import { isReservedSlug, RESERVED_SLUGS } from "./reserved-slugs";
  */
 
 test("reserved slugs can never be treated as available Page slugs", () => {
-  for (const slug of ["about", "pricing", "services", "contact", "digital-assessment"]) {
+  for (const slug of ["about", "pricing", "services", "contact", "digital-assessment", "case-studies"]) {
     assert.equal(isReservedSlug(slug), true, `expected "${slug}" to be reserved`);
   }
 });
@@ -44,6 +44,7 @@ test("every route under app/(app)/* (or the (payload) group) that a [slug] catch
     "thank-you",
     "admin",
     "api",
+    "case-studies",
   ];
   for (const slug of expected) {
     assert.ok(RESERVED_SLUGS.has(slug), `RESERVED_SLUGS is missing "${slug}"`);

@@ -12,6 +12,8 @@ import { IncludedExcluded } from "@/components/blocks/included-excluded";
 import { TimelineStrip } from "@/components/blocks/timeline-strip";
 import { FaqBlock } from "@/components/blocks/faq-block";
 import { RelatedServices } from "@/components/blocks/related-services";
+import { RelatedCaseStudies } from "@/components/blocks/related-case-studies";
+import { TestimonialsRow } from "@/components/blocks/testimonials-row";
 import { Section } from "@/components/blocks/section";
 import { Button } from "@/components/ui/button";
 
@@ -80,6 +82,8 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
         surface={service.afterLaunch ? "white" : "mist"}
       />
       <RelatedServices slugs={service.relatedServices} />
+      <RelatedCaseStudies serviceSlug={service.slug} />
+      <TestimonialsRow surface="white" />
 
       <Section surface="ink" className="text-center">
         <h2 className="font-display text-[26px] font-medium tracking-[-0.02em] text-white md:text-[34px]">
