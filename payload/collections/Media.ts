@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import { anyone, adminOrEditor, adminOnly } from "../access";
+import { revalidateAfterChange, revalidateAfterDelete } from "../hooks/revalidate";
 
 /**
  * Phase 4B. A real, reusable media library backing every image field that
@@ -13,6 +14,17 @@ import { anyone, adminOrEditor, adminOnly } from "../access";
  * (production, once BLOB_READ_WRITE_TOKEN exists) or the plugin is
  * disabled and Payload falls back to its own local-disk storage (this
  * local dev environment, which has no such token).
+ *
+ * Phase 4B.2 — revalidation reuses the same site-wide hooks Testimonials/
+ * Case Studies use, and for the identical reason (see the comment in
+ * Testimonials.ts): a Media document can be referenced from an unbounded
+ * number of places — Homepage's hero/founder/OG images, any Testimonial's
+ * logo, any Case Study's featured image or gallery — with no practical
+ * way to enumerate which pages currently use a given one at hook-
+ * execution time. This was a real gap until now: editing or replacing a
+ * file directly in the Media library (the library's whole point — reuse
+ * without re-uploading) previously revalidated nothing, so the change
+ * stayed invisible until whatever referenced it was separately re-saved.
  */
 export const Media: CollectionConfig = {
   slug: "media",
@@ -24,6 +36,10 @@ export const Media: CollectionConfig = {
     create: adminOrEditor,
     update: adminOrEditor,
     delete: adminOnly,
+  },
+  hooks: {
+    afterChange: [revalidateAfterChange],
+    afterDelete: [revalidateAfterDelete],
   },
   upload: {
     // Only used when the Vercel Blob plugin is disabled (no
