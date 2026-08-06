@@ -102,6 +102,52 @@ export const SiteSettings: GlobalConfig = {
             },
           ],
         },
+        {
+          // Phase 4C — sitewide SEO fallbacks. These are last-resort
+          // defaults only: any content type's own SEO fields (Services/
+          // Articles/Pages/Case Studies' metaTitle etc.) always take
+          // priority when set. See PHASE4C-SEO-PLAN.md §A.
+          label: "SEO Defaults",
+          fields: [
+            {
+              name: "defaultSeoTitle",
+              type: "text",
+              admin: { description: "Fallback title used when a piece of content has no title of its own." },
+            },
+            {
+              name: "defaultMetaDescription",
+              type: "textarea",
+              admin: { description: "Fallback meta description used when a piece of content has no description of its own." },
+            },
+            {
+              name: "defaultOgImage",
+              type: "upload",
+              relationTo: "media",
+              admin: { description: "Sitewide social-share image, used when a page has no image of its own." },
+            },
+            {
+              name: "defaultTwitterImage",
+              type: "upload",
+              relationTo: "media",
+              admin: { description: "Optional — falls back to the Default OG Image above when left blank." },
+            },
+            {
+              name: "schemaDescription",
+              type: "textarea",
+              admin: { description: "Business description used in the sitewide Organization structured data (JSON-LD)." },
+            },
+            {
+              name: "schemaPriceRange",
+              type: "text",
+              admin: { description: 'Used in the sitewide Organization structured data, e.g. "$$".' },
+            },
+            {
+              name: "schemaAreaServed",
+              type: "text",
+              admin: { description: "Used in the sitewide Organization structured data, e.g. \"Lebanon\"." },
+            },
+          ],
+        },
       ],
     },
   ],

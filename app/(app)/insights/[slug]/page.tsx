@@ -10,6 +10,7 @@ import { Section } from "@/components/blocks/section";
 import { Card } from "@/components/ui/card";
 import { getArticleBySlug, getPublishedArticleSlugs } from "@/lib/cms/articles";
 import { getServicesBySlugs } from "@/lib/cms/services";
+import { getSiteSettings } from "@/lib/cms/site-settings";
 
 export async function generateStaticParams() {
   const slugs = await getPublishedArticleSlugs();
@@ -22,12 +23,13 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const article = await getArticleBySlug(slug);
+  const [article, settings] = await Promise.all([getArticleBySlug(slug), getSiteSettings()]);
   if (!article) return {};
   return buildMetadata({
     title: article.metaTitle,
     description: article.metaDescription,
     path: `/insights/${article.slug}/`,
+    ogImage: settings.defaultOgImage,
   });
 }
 

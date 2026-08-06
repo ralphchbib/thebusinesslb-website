@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPageBySlug, getPublishedPageSlugs } from "@/lib/cms/pages";
 import { isReservedSlug } from "@/lib/cms/reserved-slugs";
+import { getSiteSettings } from "@/lib/cms/site-settings";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { BlockRenderer } from "@/components/blocks/page/block-renderer";
 
@@ -41,12 +42,13 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const page = await getPageBySlug(slug);
+  const [page, settings] = await Promise.all([getPageBySlug(slug), getSiteSettings()]);
   if (!page) return {};
   return buildMetadata({
     title: page.seoTitle,
     description: page.seoDescription,
     path: `/${page.slug}/`,
+    ogImage: settings.defaultOgImage,
   });
 }
 

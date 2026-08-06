@@ -1,6 +1,17 @@
 import { siteConfig } from "@/lib/config";
 
-export function organizationSchema() {
+/**
+ * Phase 4C — description/priceRange/areaServed can be overridden from
+ * Site Settings (see lib/cms/site-settings.ts's schemaDescription/
+ * schemaPriceRange/schemaAreaServed). The literals below remain as the
+ * fallback so this schema is never incomplete before an editor fills
+ * those fields in.
+ */
+export function organizationSchema(overrides?: {
+  description?: string;
+  priceRange?: string;
+  areaServed?: string;
+}) {
   const sameAs = [siteConfig.instagramUrl, siteConfig.linkedinUrl].filter(Boolean);
   return {
     "@context": "https://schema.org",
@@ -10,14 +21,15 @@ export function organizationSchema() {
     logo: `${siteConfig.url}/logo-wordmark-ink.svg`,
     image: `${siteConfig.url}/og/default.png`,
     description:
+      overrides?.description ||
       "Digital growth and business transformation company helping Lebanese SMEs build their digital presence and grow.",
     slogan: siteConfig.slogan,
     foundingDate: siteConfig.foundingDate,
     founder: { "@type": "Person", name: siteConfig.founder },
     email: siteConfig.email,
     address: { "@type": "PostalAddress", addressCountry: "LB" },
-    areaServed: [{ "@type": "Country", name: "Lebanon" }],
-    priceRange: "$$",
+    areaServed: [{ "@type": "Country", name: overrides?.areaServed || "Lebanon" }],
+    priceRange: overrides?.priceRange || "$$",
     sameAs,
   };
 }
