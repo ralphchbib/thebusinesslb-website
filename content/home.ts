@@ -1,96 +1,13 @@
-export const hero = {
-  eyebrow: "Websites. E-commerce. Social Media. AI. Consulting.",
-  h1: "Good businesses shouldn't be invisible.",
-  sub: "We help Lebanese companies build a professional digital presence, reach more customers, and grow — with the systems to keep it running after launch.",
-  ctaPrimary: "Get your assessment",
-  ctaSecondary: "See what we do",
-  reassurance: "Free for the first five businesses. No obligation, no pitch deck.",
-};
+// Phase 4A moved hero, problem, transformation, services, founder, and
+// finalCta into the Payload "homepage" Global (payload/globals/Homepage.ts,
+// read via lib/cms/homepage.ts) — see PHASE4A-HOMEPAGE-CMS-PLAN.md.
+// `process` looks like a candidate too but is kept here unchanged: it's
+// also used by app/(app)/about/how-we-work/page.tsx, which is out of this
+// phase's scope — see the note above that export. Everything else below
+// remains hardcoded, also out of scope.
 
 export const positioning =
   "Digital growth partner for Lebanese SMEs · Based in Lebanon · Founded 2026 · Websites, e-commerce, social, AI and strategy under one roof";
-
-export const problem = {
-  eyebrow: "The problem",
-  h2: "The product is rarely the problem.",
-  body1:
-    "Lebanon is full of capable companies — family businesses with decades of trade, food producers with real recipes, designers with real craft, service firms with real expertise. Very few of them are held back by what they sell.",
-  body2:
-    "They're held back by everything around it. Customers can't find them. The website was built years ago and generates nothing. Products exist but there's no way to buy them online. The Instagram account posts, but nobody enquires. Every enquiry is handled by hand, on one phone, by one person.",
-  symptoms: [
-    "A website that looks fine and produces no enquiries",
-    "Strong physical products with no way to buy them online",
-    "Posting consistently on Instagram with nothing to show for it",
-    "Enquiries arriving on WhatsApp and getting lost",
-    "No idea which marketing spend is working",
-    "Growth that depends entirely on the owner being available",
-  ],
-  quote:
-    "Many good businesses remain invisible to the customers who need them most. That's what we exist to change.",
-};
-
-export const services = {
-  eyebrow: "What we do",
-  h2: "Five services. One outcome.",
-  intro:
-    "Most businesses don't need all five. Almost none need them in the same order. That's what the assessment is for.",
-  cards: [
-    {
-      eyebrow: "Revenue engine 01",
-      name: "E-commerce & Shopify",
-      body: "We build online stores that turn traditional businesses into digital ones — set up properly for how Lebanese customers actually pay and receive orders.",
-      bullets: ["Store build and customisation", "Payments, delivery and cash-on-delivery", "Owner training and post-launch support"],
-      href: "/services/shopify-ecommerce/",
-      featured: true,
-    },
-    {
-      eyebrow: "Revenue engine 02",
-      name: "Social Media Growth",
-      body: "We don't sell posting. We build a system that turns attention into enquiries, and enquiries into customers.",
-      bullets: ["Strategy and content calendar", "Reels, posts and stories", "Monthly reporting on what worked"],
-      href: "/services/social-media/",
-      featured: true,
-    },
-    {
-      name: "Business Websites",
-      body: "A professional website built around one commercial job — generating enquiries, taking bookings, or opening export markets.",
-      bullets: [],
-      href: "/services/websites/",
-      featured: false,
-    },
-    {
-      name: "AI & Automation",
-      body: "Practical tools that answer customers faster, follow up automatically, and take repetitive work off your team.",
-      bullets: [],
-      href: "/services/ai-automation/",
-      featured: false,
-    },
-    {
-      name: "Business Consulting",
-      body: "Strategy, market research, business plans and go-to-market planning for companies making a real decision.",
-      bullets: [],
-      href: "/services/consulting/",
-      featured: false,
-    },
-  ],
-};
-
-export const transformation = {
-  eyebrow: "How the pieces fit",
-  h2: "We don't sell five services. We deliver one transformation.",
-  intro:
-    "Each service solves a different stage of the same journey. Most clients start at one stage and move forward as the previous one starts paying for itself.",
-  stages: [
-    { stage: "Assess", where: "You know something needs to change, not what", what: "Digital assessment and a 90-day roadmap" },
-    { stage: "Build the foundation", where: "No real online presence", what: "Branding, professional email, Google profile, website" },
-    { stage: "Enable commerce", where: "Products, but no way to sell online", what: "Shopify store, payments, delivery, training" },
-    { stage: "Attract customers", where: "A presence, but no traffic", what: "Social strategy, content, advertising" },
-    { stage: "Grow", where: "Working, but not fast enough", what: "Consulting, research, growth strategy" },
-    { stage: "Automate", where: "Growth outrunning your team", what: "AI tools, CRM, automation" },
-    { stage: "Scale", where: "Ready for the next level", what: "Monthly partnership, reporting, expansion" },
-  ],
-  close: "We assess the business, build its digital foundation, and stay on as its growth partner. That's the whole model.",
-};
 
 export const assessmentBlock = {
   eyebrow: "Start here",
@@ -106,24 +23,6 @@ export const assessmentBlock = {
   offer:
     "The first five assessments are free. In exchange we ask for honest feedback, a testimonial if you found it useful, and permission to write about the results. That's it.",
   quote: "Before we build, we assess. Before we recommend, we understand.",
-};
-
-export const process = {
-  eyebrow: "How we work",
-  h2: "No surprises, at any stage.",
-  steps: [
-    { n: "01", name: "Assess", body: "We understand the business before recommending anything." },
-    { n: "02", name: "Plan", body: "You get a written scope: deliverables, what's excluded, timeline, price." },
-    { n: "03", name: "Build", body: "Work is delivered by vetted specialists, coordinated by us. You have one point of contact." },
-    { n: "04", name: "Launch", body: "Nothing goes live untested. You're trained on how to run it." },
-    { n: "05", name: "Grow", body: "Monthly reporting, improvements, and a strategy review each quarter." },
-  ],
-  trust: [
-    { name: "Written agreements.", body: "Scope, revisions, ownership and timelines in writing before work starts." },
-    { name: "Milestone payments.", body: "50% to begin, 30% at design approval, 20% before launch. You're never far ahead of the work." },
-    { name: "You own everything.", body: "Accounts, files and access are yours, in your name, from day one." },
-    { name: "One point of contact.", body: "You deal with us, not with five freelancers." },
-  ],
 };
 
 export const foundingClients = {
@@ -164,25 +63,32 @@ export const sectors = {
   ],
 };
 
-export const founder = {
-  eyebrow: "The founder",
-  h2: "Ralph Chbib",
-  quote:
-    "I'm Ralph Chbib, founder of THE BUSINESS. Through my experience with Lebanese institutions, communities, and business environments, I saw many capable companies with valuable products and services being held back by weak digital visibility, fragmented systems, and limited access to modern business tools. I founded THE BUSINESS to help these companies build a professional digital presence, reach customers, modernize their operations, and grow.",
-  body: "Ralph founded THE BUSINESS lb in 2026 and works directly on every project the company takes on.",
-  cta: "Read Ralph's full story →",
+// Still used by app/(app)/about/how-we-work/page.tsx, which is out of
+// Phase 4A's scope — the Homepage Global has its own independent copy of
+// this same content (seeded from these same values) for the homepage's
+// Process section. Editing one does not affect the other.
+export const process = {
+  eyebrow: "How we work",
+  h2: "No surprises, at any stage.",
+  steps: [
+    { n: "01", name: "Assess", body: "We understand the business before recommending anything." },
+    { n: "02", name: "Plan", body: "You get a written scope: deliverables, what's excluded, timeline, price." },
+    { n: "03", name: "Build", body: "Work is delivered by vetted specialists, coordinated by us. You have one point of contact." },
+    { n: "04", name: "Launch", body: "Nothing goes live untested. You're trained on how to run it." },
+    { n: "05", name: "Grow", body: "Monthly reporting, improvements, and a strategy review each quarter." },
+  ],
+  trust: [
+    { name: "Written agreements.", body: "Scope, revisions, ownership and timelines in writing before work starts." },
+    { name: "Milestone payments.", body: "50% to begin, 30% at design approval, 20% before launch. You're never far ahead of the work." },
+    { name: "You own everything.", body: "Accounts, files and access are yours, in your name, from day one." },
+    { name: "One point of contact.", body: "You deal with us, not with five freelancers." },
+  ],
 };
 
 export const insights = {
   eyebrow: "Insights",
   h2: "Practical reading, no filler.",
   body: "Straightforward writing on digital growth for Lebanese businesses — what works here, what doesn't, and why.",
-};
-
-export const finalCta = {
-  h2: "Start with a clear picture.",
-  body: "One conversation, a written plan, and no obligation to buy anything. If we're not the right fit, we'll tell you — and you'll still have the roadmap.",
-  submit: "Send my message",
 };
 
 export const faq = [

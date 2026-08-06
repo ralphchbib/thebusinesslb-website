@@ -16,6 +16,7 @@ function toServiceContent(
   faqs: { question: string; answer: string }[],
 ): ServiceContent {
   return {
+    id: doc.id,
     slug: doc.slug,
     metaTitle: doc.metaTitle,
     metaDescription: doc.metaDescription,
@@ -116,6 +117,26 @@ export const getServiceBySlug = cache(async (slug: string): Promise<ServiceConte
   const faqs = await getFaqsByScope("service", doc.id);
   return toServiceContent(doc, faqs);
 });
+
+/**
+ * Resolves specific service IDs, order-preserving — used by the Homepage
+ * Global's Featured Services section (a relationship field, not a slug
+ * array). Same pattern as getTestimonialsByIds in lib/cms/testimonials.ts.
+ */
+export async function getServicesByIds(ids: (number | string)[]): Promise<ServiceContent[]> {
+  if (ids.length === 0) return [];
+  const payload = await getCms();
+  const result = await payload.find({
+    collection: "services",
+    where: { id: { in: ids }, isPublished: { equals: true } },
+    depth: 1,
+    limit: ids.length,
+  });
+  const docs = result.docs as unknown as PayloadServiceDoc[];
+  const byId = new Map(docs.map((d) => [String(d.id), d]));
+  const ordered = ids.map((id) => byId.get(String(id))).filter((d): d is PayloadServiceDoc => Boolean(d));
+  return Promise.all(ordered.map(async (doc) => toServiceContent(doc, await getFaqsByScope("service", doc.id))));
+}
 
 export async function getServicesBySlugs(slugs: string[]): Promise<ServiceContent[]> {
   if (slugs.length === 0) return [];
