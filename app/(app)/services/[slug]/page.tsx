@@ -34,6 +34,7 @@ export async function generateMetadata({
     title: service.metaTitle,
     description: service.metaDescription,
     path: `/services/${service.slug}/`,
+    ogImage: service.ogImage,
   });
 }
 
