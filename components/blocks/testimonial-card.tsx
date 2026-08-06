@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Star } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import type { Testimonial } from "@/lib/cms/testimonials";
@@ -21,12 +22,13 @@ export function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
       </p>
       <div className="mt-6 flex items-center gap-3">
         {logo && (
-          // Plain <img>, not next/image — logo is an arbitrary editor-supplied
-          // path/URL string (no media library yet, same convention as every
-          // other image field added since Phase 2), so it isn't guaranteed to
-          // satisfy next/image's remote-pattern configuration.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={logo} alt={companyName ?? clientName} className="h-8 w-auto object-contain" />
+          <Image
+            src={logo.url}
+            alt={logo.alt || companyName || clientName}
+            width={logo.width ?? 200}
+            height={logo.height ?? 80}
+            className="h-8 w-auto object-contain"
+          />
         )}
         <div>
           <p className="text-sm font-semibold text-ink">{clientName}</p>

@@ -1,7 +1,14 @@
 import { cache } from "react";
 import { getCms } from "./client";
 import { getTestimonialsByIds, type Testimonial } from "./testimonials";
-import type { PayloadCaseStudyDoc } from "./types";
+import type { PayloadCaseStudyDoc, PayloadMediaDoc } from "./types";
+
+export interface CaseStudyImage {
+  url: string;
+  alt: string;
+  width?: number;
+  height?: number;
+}
 
 export interface CaseStudy {
   id: number;
@@ -14,10 +21,20 @@ export interface CaseStudy {
   solution: string;
   results: { metric: string; value: string }[];
   testimonial?: Testimonial;
-  featuredImage?: string;
-  gallery: string[];
+  featuredImage?: CaseStudyImage;
+  gallery: CaseStudyImage[];
   seoTitle: string;
   seoDescription: string;
+}
+
+function toCaseStudyImage(media: number | PayloadMediaDoc | null | undefined): CaseStudyImage | undefined {
+  if (typeof media !== "object" || !media) return undefined;
+  return {
+    url: media.url,
+    alt: media.alt,
+    width: media.width ?? undefined,
+    height: media.height ?? undefined,
+  };
 }
 
 async function toCaseStudy(doc: PayloadCaseStudyDoc): Promise<CaseStudy> {
@@ -42,8 +59,10 @@ async function toCaseStudy(doc: PayloadCaseStudyDoc): Promise<CaseStudy> {
     solution: doc.solution,
     results: (doc.results ?? []).map((r) => ({ metric: r.metric, value: r.value })),
     testimonial,
-    featuredImage: doc.featuredImage || undefined,
-    gallery: (doc.gallery ?? []).map((g) => g.image),
+    featuredImage: toCaseStudyImage(doc.featuredImage),
+    gallery: (doc.gallery ?? [])
+      .map((g) => toCaseStudyImage(g.image))
+      .filter((img): img is CaseStudyImage => Boolean(img)),
     seoTitle: doc.seoTitle,
     seoDescription: doc.seoDescription,
   };

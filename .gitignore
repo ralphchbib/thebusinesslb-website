@@ -43,3 +43,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Payload local-disk upload fallback (Phase 4B) — only used when
+# BLOB_READ_WRITE_TOKEN is absent (local dev). Never used in production.
+/media-uploads/

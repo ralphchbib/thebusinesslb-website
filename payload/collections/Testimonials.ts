@@ -90,8 +90,9 @@ export const Testimonials: CollectionConfig = {
     },
     {
       name: "logo",
-      type: "text",
-      admin: { description: "Path or URL to the client's logo image, if available." },
+      type: "upload",
+      relationTo: "media",
+      admin: { description: "The client's logo image, if available. Upload new or pick an existing one." },
     },
     { name: "website", type: "text", admin: { description: "Client's website URL, optional." } },
     {

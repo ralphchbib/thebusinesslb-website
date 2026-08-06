@@ -3,6 +3,8 @@ import { fileURLToPath } from "url";
 import { buildConfig } from "payload";
 import { postgresAdapter } from "@payloadcms/db-postgres";
 import { resendAdapter } from "@payloadcms/email-resend";
+import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";
+import sharp from "sharp";
 
 import { Users } from "@/payload/collections/Users";
 import { Services } from "@/payload/collections/Services";
@@ -12,6 +14,7 @@ import { Navigation } from "@/payload/collections/Navigation";
 import { Pages } from "@/payload/collections/Pages";
 import { Testimonials } from "@/payload/collections/Testimonials";
 import { CaseStudies } from "@/payload/collections/CaseStudies";
+import { Media } from "@/payload/collections/Media";
 import { SiteSettings } from "@/payload/globals/SiteSettings";
 import { Homepage } from "@/payload/globals/Homepage";
 import { siteConfig } from "@/lib/config";
@@ -65,14 +68,30 @@ export default buildConfig({
   admin: {
     user: Users.slug,
   },
-  collections: [Users, Services, Articles, FAQs, Navigation, Pages, Testimonials, CaseStudies],
+  collections: [Users, Services, Articles, FAQs, Navigation, Pages, Testimonials, CaseStudies, Media],
   globals: [SiteSettings, Homepage],
+  sharp,
   graphQL: {
     // This is Payload's own default — set explicitly so the production/
     // development split is visible in code and independently verifiable,
     // rather than relying on an implicit default.
     disablePlaygroundInProduction: true,
   },
+  // Only actually activates Vercel Blob when a real token exists.
+  // BLOB_READ_WRITE_TOKEN is provisioned per-environment in the Vercel
+  // dashboard (production), the same way DATABASE_URL/PAYLOAD_SECRET are —
+  // it does not exist in this local dev environment. Without it, `enabled`
+  // is false and Payload transparently falls back to its own local-disk
+  // upload storage for the Media collection, which works fine for local
+  // development (it's only Vercel's ephemeral serverless filesystem where
+  // local disk storage doesn't work — see MEDIA-ARCHITECTURE.md).
+  plugins: [
+    vercelBlobStorage({
+      enabled: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
+      collections: { media: true },
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+    }),
+  ],
   // No collection here uses a `richText` field (long copy uses `textarea`,
   // matching the plain-string content model already in content/*.ts), so
   // no default editor is configured — keeps the dependency footprint

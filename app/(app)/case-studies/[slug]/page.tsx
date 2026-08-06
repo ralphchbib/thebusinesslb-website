@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { getCaseStudyBySlug, getPublishedCaseStudySlugs } from "@/lib/cms/case-studies";
 import { buildMetadata } from "@/lib/seo/metadata";
@@ -31,7 +32,7 @@ export async function generateMetadata({
     title: caseStudy.seoTitle,
     description: caseStudy.seoDescription,
     path: `/case-studies/${caseStudy.slug}/`,
-    ogImage: caseStudy.featuredImage,
+    ogImage: caseStudy.featuredImage?.url,
   });
 }
 
@@ -72,12 +73,16 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
         </h1>
         <p className="mt-4 text-lg text-n600">{caseStudy.clientName}</p>
         {caseStudy.featuredImage && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={caseStudy.featuredImage}
-            alt={caseStudy.title}
-            className="mt-8 aspect-[16/9] w-full rounded-lg object-cover"
-          />
+          <div className="relative mt-8 aspect-[16/9] w-full overflow-hidden rounded-lg">
+            <Image
+              src={caseStudy.featuredImage.url}
+              alt={caseStudy.featuredImage.alt || caseStudy.title}
+              fill
+              sizes="(min-width: 1024px) 900px, 100vw"
+              className="object-cover"
+              priority
+            />
+          </div>
         )}
       </Section>
 
@@ -110,14 +115,16 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
       {caseStudy.gallery.length > 0 && (
         <Section surface="mist">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {caseStudy.gallery.map((src, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={i}
-                src={src}
-                alt={`${caseStudy.title} — image ${i + 1}`}
-                className="aspect-[4/3] w-full rounded-lg object-cover"
-              />
+            {caseStudy.gallery.map((image, i) => (
+              <div key={i} className="relative aspect-[4/3] w-full overflow-hidden rounded-lg">
+                <Image
+                  src={image.url}
+                  alt={image.alt || `${caseStudy.title} — image ${i + 1}`}
+                  fill
+                  sizes="(min-width: 640px) 500px, 100vw"
+                  className="object-cover"
+                />
+              </div>
             ))}
           </div>
         </Section>

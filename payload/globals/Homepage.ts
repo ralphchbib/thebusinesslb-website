@@ -46,14 +46,14 @@ export const Homepage: GlobalConfig = {
             { name: "heroReassurance", type: "text" },
             {
               name: "heroImage",
-              type: "text",
+              type: "upload",
+              relationTo: "media",
               required: true,
               admin: {
                 description:
-                  "Must be a path to a file already placed in the project's /public folder (e.g. /hero-new.jpg) — NOT an external URL. This image is performance-critical (it's the page's priority/LCP image) and this site has no remote-image proxy configured, so an external URL will fail to render. Adding a new image here requires a developer to add the file to /public first.",
+                  "The hero image. This is the page's priority/LCP image — pick or upload one that's already reasonably sized; the Media library generates a 1200px-wide variant for this use automatically.",
               },
             },
-            { name: "heroImageAlt", type: "text", required: true },
           ],
         },
         {
@@ -138,14 +138,11 @@ export const Homepage: GlobalConfig = {
             { name: "founderBody", type: "textarea", required: true },
             {
               name: "founderImage",
-              type: "text",
+              type: "upload",
+              relationTo: "media",
               required: true,
-              admin: {
-                description:
-                  "Must be a path to a file already placed in the project's /public folder (e.g. /founder-new.jpg) — NOT an external URL, same constraint and reasoning as the Hero image above.",
-              },
+              admin: { description: "The founder's photo. Pick or upload one." },
             },
-            { name: "founderImageAlt", type: "text", required: true },
             { name: "founderCtaLabel", type: "text", required: true },
             { name: "founderCtaHref", type: "text", required: true },
           ],
@@ -245,8 +242,9 @@ export const Homepage: GlobalConfig = {
             { name: "metaDescription", type: "textarea", required: true, maxLength: 155 },
             {
               name: "ogImage",
-              type: "text",
-              admin: { description: "Path or URL. Leave blank to use the site default OG image." },
+              type: "upload",
+              relationTo: "media",
+              admin: { description: "Optional. Leave blank to use the site default social-share image." },
             },
           ],
         },
