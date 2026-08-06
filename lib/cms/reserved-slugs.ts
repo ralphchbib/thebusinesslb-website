@@ -32,6 +32,11 @@ export const RESERVED_SLUGS = new Set([
   "thank-you",
   "admin",
   "api",
+  // Added for Phase 3 (app/(app)/case-studies/page.tsx, the hub route).
+  // The individual /case-studies/[slug]/ detail pages don't need their own
+  // entry — nested dynamic segments can't collide with the top-level
+  // [slug] catch-all, same as /services/[slug]/ and /insights/[slug]/.
+  "case-studies",
 ]);
 
 export function isReservedSlug(slug: string): boolean {

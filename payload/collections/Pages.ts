@@ -4,15 +4,18 @@ import { revalidatePageAfterChange, revalidatePageAfterDelete } from "../hooks/r
 import { HeroBlock } from "../blocks/Hero";
 import { TextBlock } from "../blocks/Text";
 import { CtaBlock } from "../blocks/Cta";
+import { TestimonialsBlock } from "../blocks/Testimonials";
+import { CaseStudiesBlock } from "../blocks/CaseStudies";
 import { isReservedSlug } from "@/lib/cms/reserved-slugs";
 
 /**
- * Phase 2 foundation only — Hero, Text, and Cta are deliberately the only
- * 3 block types. See PHASE2-ARCHITECTURE.md §3 for the full block-library
- * plan and why the richText-based "Rich Content" block specifically is
- * not part of this foundation (§7.1 — gated on a separate compatibility
- * spike, since Phase 1 removed richText after it broke Payload's CLI
- * under Node 24).
+ * Phase 2 foundation shipped Hero, Text, and Cta only. Phase 3 adds
+ * Testimonials and Case Studies (both reference the two new collections
+ * of the same name) — still not the full block library from
+ * PHASE2-ARCHITECTURE.md §3, and the richText-based "Rich Content" block
+ * specifically is still not part of this (§7.1 — gated on a separate
+ * compatibility spike, since Phase 1 removed richText after it broke
+ * Payload's CLI under Node 24).
  */
 export const Pages: CollectionConfig = {
   slug: "pages",
@@ -87,7 +90,7 @@ export const Pages: CollectionConfig = {
       name: "blocks",
       type: "blocks",
       minRows: 1,
-      blocks: [HeroBlock, TextBlock, CtaBlock],
+      blocks: [HeroBlock, TextBlock, CtaBlock, TestimonialsBlock, CaseStudiesBlock],
     },
   ],
 };

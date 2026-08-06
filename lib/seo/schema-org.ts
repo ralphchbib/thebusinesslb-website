@@ -74,3 +74,28 @@ export function personSchema() {
     url: `${siteConfig.url}/about/ralph-chbib/`,
   };
 }
+
+/**
+ * Article is the correct, valid schema.org type here — there's no
+ * dedicated "case study" type in the vocabulary. Matches how Articles
+ * (app/(app)/insights/[slug]/page.tsx) already use "@type": "Article"
+ * inline; this one lives in the shared file instead, which is the better
+ * pattern going forward.
+ */
+export function caseStudySchema(params: {
+  title: string;
+  description: string;
+  path: string;
+  clientName: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: params.title,
+    description: params.description,
+    about: params.clientName,
+    url: `${siteConfig.url}${params.path}`,
+    author: { "@type": "Organization", name: siteConfig.name },
+    publisher: { "@type": "Organization", name: siteConfig.name },
+  };
+}
