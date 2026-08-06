@@ -76,11 +76,39 @@ export function personSchema() {
 }
 
 /**
+ * Phase 4C — extracted from what was previously an inline object literal
+ * in app/(app)/insights/[slug]/page.tsx (the one schema type in this
+ * codebase that wasn't centralized here, unlike the near-identical
+ * caseStudySchema() below). Produces the exact same fields as the
+ * original inline version when `image` is omitted — verified byte-
+ * identical before the `image` field was added, see
+ * PHASE4C-4-VALIDATION.md. Deliberately does not add a `url` field
+ * (unlike caseStudySchema()) to keep this refactor's diff minimal;
+ * worth revisiting for consistency in a future pass.
+ */
+export function articleSchema(params: {
+  title: string;
+  description: string;
+  datePublished: string;
+  image?: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: params.title,
+    description: params.description,
+    datePublished: params.datePublished,
+    author: { "@type": "Person", name: siteConfig.founder },
+    publisher: { "@type": "Organization", name: siteConfig.name },
+    ...(params.image ? { image: params.image } : {}),
+  };
+}
+
+/**
  * Article is the correct, valid schema.org type here — there's no
  * dedicated "case study" type in the vocabulary. Matches how Articles
- * (app/(app)/insights/[slug]/page.tsx) already use "@type": "Article"
- * inline; this one lives in the shared file instead, which is the better
- * pattern going forward.
+ * now use articleSchema() above; this one lives in the shared file too,
+ * the pattern every schema type in this codebase now follows.
  */
 export function caseStudySchema(params: {
   title: string;
