@@ -251,3 +251,75 @@ export interface PayloadPageDoc {
   blocks?: PayloadPageBlockDoc[] | null;
   _status?: "draft" | "published" | null;
 }
+
+// Phase 4A — Homepage. A singleton Global, not a collection — see
+// PHASE4A-HOMEPAGE-CMS-PLAN.md. No versions/drafts: every save is live
+// immediately, matching SiteSettings.
+export interface PayloadHomepageServicesCardDoc {
+  id?: string;
+  service: number | PayloadServiceDoc;
+  featured?: boolean | null;
+  overrideBody?: string | null;
+  overrideBullets?: PayloadTextItem[] | null;
+}
+
+export interface PayloadHomepageDoc {
+  heroEyebrow?: string | null;
+  heroHeadline: string;
+  heroHighlightedText?: string | null;
+  heroSubheadline: string;
+  heroCtaPrimaryLabel: string;
+  heroCtaPrimaryHref: string;
+  heroCtaSecondaryLabel: string;
+  heroCtaSecondaryHref: string;
+  heroReassurance?: string | null;
+  heroImage: string;
+  heroImageAlt: string;
+
+  problemEyebrow?: string | null;
+  problemTitle: string;
+  problemBody1: string;
+  problemBody2: string;
+  problemQuote: string;
+  problemSymptoms: PayloadTextItem[];
+
+  transformationEyebrow?: string | null;
+  transformationTitle: string;
+  transformationIntro: string;
+  transformationStages: { id?: string; stage: string; where: string; what: string }[];
+  transformationClosingLine: string;
+
+  processEyebrow?: string | null;
+  processTitle: string;
+  processSteps: { id?: string; number: string; name: string; body: string }[];
+  processTrustPoints?: { id?: string; name: string; body: string }[] | null;
+
+  founderEyebrow?: string | null;
+  founderTitle: string;
+  founderQuote: string;
+  founderBody: string;
+  founderImage: string;
+  founderImageAlt: string;
+  founderCtaLabel: string;
+  founderCtaHref: string;
+
+  servicesEyebrow?: string | null;
+  servicesTitle: string;
+  servicesIntro: string;
+  servicesCards: PayloadHomepageServicesCardDoc[];
+
+  testimonialsEyebrow?: string | null;
+  testimonialsTitle?: string | null;
+  testimonialsIds?: (number | PayloadTestimonialDoc)[] | null;
+
+  caseStudiesEyebrow?: string | null;
+  caseStudiesTitle?: string | null;
+  caseStudiesIds?: (number | PayloadCaseStudyDoc)[] | null;
+
+  finalCtaHeadline: string;
+  finalCtaSubheadline: string;
+
+  metaTitle: string;
+  metaDescription: string;
+  ogImage?: string | null;
+}

@@ -17,6 +17,11 @@ export interface ServiceTimelineStep {
 }
 
 export interface ServiceContent {
+  // Optional: only populated when built from a live Payload document (see
+  // lib/cms/services.ts's toServiceContent). The static content/services/*
+  // literals predate the CMS migration and never set this — kept optional
+  // so those files don't need updating for a field they can't have.
+  id?: number;
   slug: string;
   metaTitle: string;
   metaDescription: string;

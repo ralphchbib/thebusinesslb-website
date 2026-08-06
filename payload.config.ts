@@ -13,6 +13,7 @@ import { Pages } from "@/payload/collections/Pages";
 import { Testimonials } from "@/payload/collections/Testimonials";
 import { CaseStudies } from "@/payload/collections/CaseStudies";
 import { SiteSettings } from "@/payload/globals/SiteSettings";
+import { Homepage } from "@/payload/globals/Homepage";
 import { siteConfig } from "@/lib/config";
 
 const filename = fileURLToPath(import.meta.url);
@@ -65,7 +66,7 @@ export default buildConfig({
     user: Users.slug,
   },
   collections: [Users, Services, Articles, FAQs, Navigation, Pages, Testimonials, CaseStudies],
-  globals: [SiteSettings],
+  globals: [SiteSettings, Homepage],
   graphQL: {
     // This is Payload's own default — set explicitly so the production/
     // development split is visible in code and independently verifiable,
