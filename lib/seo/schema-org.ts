@@ -22,6 +22,17 @@ export function organizationSchema() {
   };
 }
 
+/** Sitewide entry point — used on the homepage only. See PHASE4C-SEO-PLAN.md §B/§H. */
+export function websiteSchema() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteConfig.name,
+    url: siteConfig.url,
+    description: siteConfig.serviceStatement,
+  };
+}
+
 export function breadcrumbSchema(items: { name: string; path: string }[]) {
   return {
     "@context": "https://schema.org",

@@ -15,6 +15,7 @@ import { CaseStudiesRow } from "@/components/blocks/case-studies-row";
 import { FinalCta } from "@/components/blocks/final-cta";
 import { FaqBlock } from "@/components/blocks/faq-block";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { websiteSchema, faqSchema } from "@/lib/seo/schema-org";
 import { getFaqsByScope } from "@/lib/cms/faqs";
 import { getHomepage } from "@/lib/cms/homepage";
 
@@ -31,8 +32,18 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function Home() {
   const [home, faq] = await Promise.all([getHomepage(), getFaqsByScope("global")]);
 
+  const jsonLd = [websiteSchema(), ...(faq.length > 0 ? [faqSchema(faq)] : [])];
+
   return (
     <>
+      {jsonLd.map((schema, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      ))}
+
       <Hero
         eyebrow={home.hero.eyebrow}
         headline={home.hero.headline}
