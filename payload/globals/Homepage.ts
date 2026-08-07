@@ -1,11 +1,20 @@
 import type { GlobalConfig } from "payload";
-import { anyone, adminOrEditor } from "../access";
+import { adminOrEditor } from "../access";
 import { revalidateGlobalAfterChange } from "../hooks/revalidate";
+import { siteConfig } from "@/lib/config";
 
 /**
- * Phase 4A. Singleton, no draft/publish workflow — same reasoning as
- * SiteSettings: this is "the current homepage," not a document with a
- * meaningful unpublished state. Every Save goes live immediately, sitewide.
+ * Phase 4A shipped this as a singleton with no draft/publish workflow.
+ * Phase 5C — gains native draft/publish versioning, same pattern as
+ * Pages/CaseStudies/Services/Articles. See PHASE5C-HOMEPAGE-PREVIEW-PLAN.md
+ * for the full rationale; summary here:
+ *
+ * - `versions.drafts` + the `access.read` gate below are the exact same
+ *   pattern already proven in production on 4 collections — not a new
+ *   mechanism, just the first time it's applied to a Global.
+ * - Unlike Services/Articles, there was no legacy `isPublished`-style
+ *   field to retire — `_status` is the only publish-state concept this
+ *   document has ever had.
  *
  * Scope: only the 7 homepage sections + SEO covered by the Phase 4A brief
  * (see PHASE4A-HOMEPAGE-CMS-PLAN.md §0). PositioningBar, AssessmentBlock,
@@ -14,8 +23,28 @@ import { revalidateGlobalAfterChange } from "../hooks/revalidate";
  */
 export const Homepage: GlobalConfig = {
   slug: "homepage",
+  admin: {
+    // Phase 5C — same "Preview" button pattern as every drafts-enabled
+    // collection; no slug needed since this Global has exactly one
+    // document, always rendered at "/".
+    preview: () => {
+      const secret = process.env.PREVIEW_SECRET;
+      if (!secret) return null;
+      return `${siteConfig.url}/api/draft?secret=${secret}&collection=homepage`;
+    },
+  },
+  versions: {
+    drafts: true,
+  },
   access: {
-    read: anyone,
+    // Same reasoning as Pages.ts/CaseStudies.ts/Services.ts/Articles.ts —
+    // see those files. Closes the same pre-existing gap: `read: anyone`
+    // previously meant Payload's own access layer imposed no restriction
+    // at all on this Global.
+    read: ({ req: { user } }) => {
+      if (user) return true;
+      return { _status: { equals: "published" } };
+    },
     update: adminOrEditor,
   },
   hooks: {
