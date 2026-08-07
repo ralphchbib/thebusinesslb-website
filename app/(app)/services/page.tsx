@@ -5,6 +5,7 @@ import { getAllServices } from "@/lib/cms/services";
 import { getFaqsByScope } from "@/lib/cms/faqs";
 import { getSiteSettings } from "@/lib/cms/site-settings";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { breadcrumbSchema } from "@/lib/seo/schema-org";
 import { Breadcrumb } from "@/components/blocks/breadcrumb";
 import { Section } from "@/components/blocks/section";
 import { Card } from "@/components/ui/card";
@@ -33,6 +34,11 @@ export default async function ServicesHubPage() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema([{ name: "Services", path: "/services/" }])) }}
+      />
+
       <Breadcrumb items={[{ name: "Services" }]} />
 
       <Section surface="white">

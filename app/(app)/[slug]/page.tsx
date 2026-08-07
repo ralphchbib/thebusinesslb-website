@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getPageBySlug, getPublishedPageSlugs } from "@/lib/cms/pages";
 import { isReservedSlug } from "@/lib/cms/reserved-slugs";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { breadcrumbSchema } from "@/lib/seo/schema-org";
 import { BlockRenderer } from "@/components/blocks/page/block-renderer";
 
 /**
@@ -55,5 +56,15 @@ export default async function CmsPage({ params }: { params: Promise<{ slug: stri
   const page = await getPageBySlug(slug);
   if (!page) notFound();
 
-  return <BlockRenderer blocks={page.blocks ?? []} />;
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbSchema([{ name: page.title, path: `/${page.slug}/` }])),
+        }}
+      />
+      <BlockRenderer blocks={page.blocks ?? []} />
+    </>
+  );
 }

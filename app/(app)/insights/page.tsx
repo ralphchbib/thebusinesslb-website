@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { breadcrumbSchema } from "@/lib/seo/schema-org";
 import { Breadcrumb } from "@/components/blocks/breadcrumb";
 import { Section } from "@/components/blocks/section";
 import { Card } from "@/components/ui/card";
@@ -21,6 +22,11 @@ export default async function InsightsPage() {
   const [articles, settings] = await Promise.all([getAllArticles(), getSiteSettings()]);
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema([{ name: "Insights", path: "/insights/" }])) }}
+      />
+
       <Breadcrumb items={[{ name: "Insights" }]} />
 
       <Section surface="white">
