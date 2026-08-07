@@ -5,6 +5,7 @@ import { getPageBySlug } from "@/lib/cms/pages";
 import { getCaseStudyBySlug } from "@/lib/cms/case-studies";
 import { getServiceBySlug } from "@/lib/cms/services";
 import { getArticleBySlug } from "@/lib/cms/articles";
+import { getHomepage } from "@/lib/cms/homepage";
 
 /**
  * Phase 5A — enables Next.js Draft Mode for a single Page or Case Study.
@@ -21,9 +22,11 @@ import { getArticleBySlug } from "@/lib/cms/articles";
  *    defense in depth beyond the secret alone, so a leaked/bookmarked
  *    preview link can't be replayed by someone who was never logged in.
  * 3. Whitelist `collection` to exactly "pages" | "case-studies" |
- *    "services" | "articles" (the latter two added in Phase 5B) — never
- *    pass the query param through to Payload's `collection` option
- *    unchecked.
+ *    "services" | "articles" (added in Phase 5B) | "homepage" (added in
+ *    Phase 5C) — never pass the query param through to Payload's
+ *    `collection` option unchecked. "homepage" is the one Global in this
+ *    whitelist — it has no `slug`, always exactly one document, and
+ *    always redirects to "/".
  * 4. Look the document up via the same draft-aware fetch the public page
  *    will use, and derive the redirect path FROM that confirmed
  *    document's own slug/collection — never redirect to a raw,
@@ -45,6 +48,15 @@ export async function GET(request: NextRequest) {
   const { user } = await payload.auth({ headers: request.headers });
   if (!user || (user.role !== "admin" && user.role !== "editor")) {
     return new NextResponse("Not authenticated as an admin or editor", { status: 401 });
+  }
+
+  // "homepage" is a Global (exactly one document, no slug, always "/") —
+  // handled before the slug check every other branch below requires.
+  if (collection === "homepage") {
+    const home = await getHomepage(true);
+    if (!home) return new NextResponse("Homepage not found", { status: 404 });
+    (await draftMode()).enable();
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   if (!slug) {
@@ -70,7 +82,7 @@ export async function GET(request: NextRequest) {
     redirectPath = `/insights/${article.slug}/`;
   } else {
     return new NextResponse(
-      'Invalid collection — must be "pages", "case-studies", "services", or "articles"',
+      'Invalid collection — must be "pages", "case-studies", "services", "articles", or "homepage"',
       { status: 400 },
     );
   }

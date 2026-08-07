@@ -292,6 +292,7 @@ export interface PayloadHomepageServicesCardDoc {
 }
 
 export interface PayloadHomepageDoc {
+  _status?: "draft" | "published" | null;
   heroEyebrow?: string | null;
   heroHeadline: string;
   heroHighlightedText?: string | null;

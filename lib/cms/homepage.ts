@@ -92,12 +92,21 @@ export interface HomepageData {
 }
 
 // Wrapped in React's cache() — see the equivalent note in lib/cms/services.ts.
-// generateMetadata and the page component both call this for the same
-// request; cache() collapses them into one Payload query.
-export const getHomepage = cache(async (): Promise<HomepageData> => {
+/**
+ * Phase 5C — `draft` mirrors every other drafts-aware fetcher in this
+ * directory (getPageBySlug, getServiceBySlug, etc.): a plain boolean, not
+ * an options object, so React's cache() actually shares the query between
+ * generateMetadata() and the page component. Only ever passed `true` from
+ * the Draft Mode-gated call site in app/(app)/page.tsx; the one existing
+ * caller keeps the exact previous behavior by omitting the argument.
+ * generateMetadata and the page component both call this for the same
+ * request; cache() collapses them into one Payload query.
+ */
+export const getHomepage = cache(async (draft: boolean = false): Promise<HomepageData> => {
   const payload = await getCms();
   const doc = (await payload.findGlobal({
     slug: "homepage",
+    draft,
     // depth: 1 — populates heroImage/founderImage/ogImage (Media
     // relationships) and servicesCards[].service directly. servicesCards
     // is still re-resolved via getServicesByIds below regardless, since

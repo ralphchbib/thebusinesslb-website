@@ -16,22 +16,29 @@ import { FinalCta } from "@/components/blocks/final-cta";
 import { FaqBlock } from "@/components/blocks/faq-block";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { websiteSchema, faqSchema } from "@/lib/seo/schema-org";
+import { isPreviewMode, PREVIEW_ROBOTS } from "@/lib/seo/preview";
 import { getFaqsByScope } from "@/lib/cms/faqs";
 import { getHomepage } from "@/lib/cms/homepage";
 import { getSiteSettings } from "@/lib/cms/site-settings";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [home, settings] = await Promise.all([getHomepage(), getSiteSettings()]);
-  return buildMetadata({
+  const preview = await isPreviewMode();
+  const [home, settings] = await Promise.all([getHomepage(preview), getSiteSettings()]);
+  const metadata = buildMetadata({
     title: home.seo.metaTitle,
     description: home.seo.metaDescription,
     path: "/",
     ogImage: home.seo.ogImage ?? settings.defaultOgImage,
   });
+  if (preview) {
+    metadata.robots = PREVIEW_ROBOTS;
+  }
+  return metadata;
 }
 
 export default async function Home() {
-  const [home, faq] = await Promise.all([getHomepage(), getFaqsByScope("global")]);
+  const preview = await isPreviewMode();
+  const [home, faq] = await Promise.all([getHomepage(preview), getFaqsByScope("global")]);
 
   const jsonLd = [websiteSchema(), ...(faq.length > 0 ? [faqSchema(faq)] : [])];
 
