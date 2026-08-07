@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { breadcrumbSchema, articleSchema } from "@/lib/seo/schema-org";
+import { isPreviewMode, PREVIEW_ROBOTS } from "@/lib/seo/preview";
 import { Breadcrumb } from "@/components/blocks/breadcrumb";
 import { Section } from "@/components/blocks/section";
 import { Card } from "@/components/ui/card";
@@ -16,25 +17,35 @@ export async function generateStaticParams() {
   return slugs.map((slug) => ({ slug }));
 }
 
+// Phase 5B — same reasoning as the services detail route; set explicitly
+// for consistency (previously relied on Next's implicit default).
+export const dynamicParams = true;
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const [article, settings] = await Promise.all([getArticleBySlug(slug), getSiteSettings()]);
+  const preview = await isPreviewMode();
+  const [article, settings] = await Promise.all([getArticleBySlug(slug, preview), getSiteSettings()]);
   if (!article) return {};
-  return buildMetadata({
+  const metadata = buildMetadata({
     title: article.metaTitle,
     description: article.metaDescription,
     path: `/insights/${article.slug}/`,
     ogImage: article.ogImage ?? settings.defaultOgImage,
   });
+  if (preview) {
+    metadata.robots = PREVIEW_ROBOTS;
+  }
+  return metadata;
 }
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const article = await getArticleBySlug(slug);
+  const preview = await isPreviewMode();
+  const article = await getArticleBySlug(slug, preview);
   if (!article) notFound();
 
   const jsonLd = [

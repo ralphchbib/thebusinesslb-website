@@ -5,6 +5,7 @@ import { getServiceBySlug, getPublishedServiceSlugs } from "@/lib/cms/services";
 import { getSiteSettings } from "@/lib/cms/site-settings";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { breadcrumbSchema, faqSchema, serviceSchema } from "@/lib/seo/schema-org";
+import { isPreviewMode, PREVIEW_ROBOTS } from "@/lib/seo/preview";
 import { Breadcrumb } from "@/components/blocks/breadcrumb";
 import { ServiceHero } from "@/components/blocks/service-hero";
 import { LocalProblem } from "@/components/blocks/local-problem";
@@ -23,25 +24,37 @@ export async function generateStaticParams() {
   return slugs.map((slug) => ({ slug }));
 }
 
+// Phase 5B — same reasoning as app/(app)/[slug]/page.tsx and
+// app/(app)/case-studies/[slug]/page.tsx: a newly published service goes
+// live on first request, no rebuild required. Previously relied on
+// Next's implicit default; set explicitly for consistency.
+export const dynamicParams = true;
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const [service, settings] = await Promise.all([getServiceBySlug(slug), getSiteSettings()]);
+  const preview = await isPreviewMode();
+  const [service, settings] = await Promise.all([getServiceBySlug(slug, preview), getSiteSettings()]);
   if (!service) return {};
-  return buildMetadata({
+  const metadata = buildMetadata({
     title: service.metaTitle,
     description: service.metaDescription,
     path: `/services/${service.slug}/`,
     ogImage: service.ogImage ?? settings.defaultOgImage,
   });
+  if (preview) {
+    metadata.robots = PREVIEW_ROBOTS;
+  }
+  return metadata;
 }
 
 export default async function ServicePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const service = await getServiceBySlug(slug);
+  const preview = await isPreviewMode();
+  const service = await getServiceBySlug(slug, preview);
   if (!service) notFound();
 
   const jsonLd = [

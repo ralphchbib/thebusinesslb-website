@@ -3,6 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getCms } from "@/lib/cms/client";
 import { getPageBySlug } from "@/lib/cms/pages";
 import { getCaseStudyBySlug } from "@/lib/cms/case-studies";
+import { getServiceBySlug } from "@/lib/cms/services";
+import { getArticleBySlug } from "@/lib/cms/articles";
 
 /**
  * Phase 5A — enables Next.js Draft Mode for a single Page or Case Study.
@@ -18,7 +20,8 @@ import { getCaseStudyBySlug } from "@/lib/cms/case-studies";
  * 2. ALSO require an authenticated Payload session (admin or editor) —
  *    defense in depth beyond the secret alone, so a leaked/bookmarked
  *    preview link can't be replayed by someone who was never logged in.
- * 3. Whitelist `collection` to exactly "pages" | "case-studies" — never
+ * 3. Whitelist `collection` to exactly "pages" | "case-studies" |
+ *    "services" | "articles" (the latter two added in Phase 5B) — never
  *    pass the query param through to Payload's `collection` option
  *    unchecked.
  * 4. Look the document up via the same draft-aware fetch the public page
@@ -57,8 +60,19 @@ export async function GET(request: NextRequest) {
     const caseStudy = await getCaseStudyBySlug(slug, true);
     if (!caseStudy) return new NextResponse("Case study not found", { status: 404 });
     redirectPath = `/case-studies/${caseStudy.slug}/`;
+  } else if (collection === "services") {
+    const service = await getServiceBySlug(slug, true);
+    if (!service) return new NextResponse("Service not found", { status: 404 });
+    redirectPath = `/services/${service.slug}/`;
+  } else if (collection === "articles") {
+    const article = await getArticleBySlug(slug, true);
+    if (!article) return new NextResponse("Article not found", { status: 404 });
+    redirectPath = `/insights/${article.slug}/`;
   } else {
-    return new NextResponse('Invalid collection — must be "pages" or "case-studies"', { status: 400 });
+    return new NextResponse(
+      'Invalid collection — must be "pages", "case-studies", "services", or "articles"',
+      { status: 400 },
+    );
   }
 
   (await draftMode()).enable();

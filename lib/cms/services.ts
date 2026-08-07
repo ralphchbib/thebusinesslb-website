@@ -71,7 +71,7 @@ export const getAllServices = cache(async (): Promise<ServiceContent[]> => {
   const payload = await getCms();
   const result = await payload.find({
     collection: "services",
-    where: { isPublished: { equals: true } },
+    where: { _status: { equals: "published" } },
     sort: "order",
     depth: 1,
     limit: 100,
@@ -88,7 +88,7 @@ export const getServicePriceMap = cache(async (): Promise<Record<string, string>
   const payload = await getCms();
   const result = await payload.find({
     collection: "services",
-    where: { isPublished: { equals: true } },
+    where: { _status: { equals: "published" } },
     depth: 0,
     limit: 100,
     select: { slug: true, priceAnchor: true },
@@ -101,7 +101,7 @@ export const getPublishedServiceSlugs = cache(async (): Promise<string[]> => {
   const payload = await getCms();
   const result = await payload.find({
     collection: "services",
-    where: { isPublished: { equals: true } },
+    where: { _status: { equals: "published" } },
     sort: "order",
     depth: 0,
     limit: 100,
@@ -111,19 +111,31 @@ export const getPublishedServiceSlugs = cache(async (): Promise<string[]> => {
   return docs.map((d) => d.slug);
 });
 
-export const getServiceBySlug = cache(async (slug: string): Promise<ServiceContent | null> => {
-  const payload = await getCms();
-  const result = await payload.find({
-    collection: "services",
-    where: { slug: { equals: slug }, isPublished: { equals: true } },
-    depth: 1,
-    limit: 1,
-  });
-  const doc = result.docs[0] as unknown as PayloadServiceDoc | undefined;
-  if (!doc) return null;
-  const faqs = await getFaqsByScope("service", doc.id);
-  return toServiceContent(doc, faqs);
-});
+/**
+ * Phase 5B — `draft` mirrors lib/cms/pages.ts's getPageBySlug: a plain
+ * boolean (not an options object, so React's cache() actually shares the
+ * query between generateMetadata() and the page component) that opts
+ * into Payload's `draft: true` local-API param and drops the
+ * `_status: "published"` filter. Only ever passed `true` from the
+ * Draft Mode-gated call sites; every existing caller keeps the exact
+ * previous published-only behavior by omitting the argument.
+ */
+export const getServiceBySlug = cache(
+  async (slug: string, draft: boolean = false): Promise<ServiceContent | null> => {
+    const payload = await getCms();
+    const result = await payload.find({
+      collection: "services",
+      where: draft ? { slug: { equals: slug } } : { slug: { equals: slug }, _status: { equals: "published" } },
+      draft,
+      depth: 1,
+      limit: 1,
+    });
+    const doc = result.docs[0] as unknown as PayloadServiceDoc | undefined;
+    if (!doc) return null;
+    const faqs = await getFaqsByScope("service", doc.id);
+    return toServiceContent(doc, faqs);
+  },
+);
 
 /**
  * Resolves specific service IDs, order-preserving — used by the Homepage
@@ -135,7 +147,7 @@ export async function getServicesByIds(ids: (number | string)[]): Promise<Servic
   const payload = await getCms();
   const result = await payload.find({
     collection: "services",
-    where: { id: { in: ids }, isPublished: { equals: true } },
+    where: { id: { in: ids }, _status: { equals: "published" } },
     depth: 1,
     limit: ids.length,
   });
@@ -150,7 +162,7 @@ export async function getServicesBySlugs(slugs: string[]): Promise<ServiceConten
   const payload = await getCms();
   const result = await payload.find({
     collection: "services",
-    where: { slug: { in: slugs }, isPublished: { equals: true } },
+    where: { slug: { in: slugs }, _status: { equals: "published" } },
     depth: 1,
     limit: slugs.length,
   });
