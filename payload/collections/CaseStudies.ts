@@ -3,6 +3,7 @@ import { adminOrEditor, adminOnly } from "../access";
 import { revalidateAfterChange, revalidateAfterDelete } from "../hooks/revalidate";
 import { isReservedSlug } from "@/lib/cms/reserved-slugs";
 import { sectorOptions } from "@/lib/validation/schemas";
+import { siteConfig } from "@/lib/config";
 
 /**
  * In-depth client success stories. Each gets its own page at
@@ -28,6 +29,13 @@ export const CaseStudies: CollectionConfig = {
     useAsTitle: "title",
     defaultColumns: ["title", "clientName", "featured", "_status"],
     description: "In-depth client success stories — each gets its own page at /case-studies/{slug}/.",
+    // Phase 5A — same "Preview" button pattern as Pages.ts; see that
+    // file's comment for the full reasoning.
+    preview: (doc) => {
+      const secret = process.env.PREVIEW_SECRET;
+      if (!secret || typeof doc?.slug !== "string") return null;
+      return `${siteConfig.url}/api/draft?secret=${secret}&collection=case-studies&slug=${encodeURIComponent(doc.slug)}`;
+    },
   },
   versions: {
     drafts: true,

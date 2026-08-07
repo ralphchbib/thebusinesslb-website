@@ -44,29 +44,44 @@ function toPageData(doc: PayloadPageDoc): PageData {
  * control), this ensures getPageBySlug itself would still refuse to
  * serve the colliding content rather than compounding the problem.
  *
- * Also deliberately does not pass `draft: true` to payload.find() —
- * Payload's default find/findByID behavior for a drafts-enabled
- * collection already returns only the published version.
- * `_status: { equals: "published" }` is added anyway as an explicit,
- * visible filter matching the convention every other function in this
- * directory follows (isPublished: { equals: true } on Services/Articles),
- * rather than relying solely on an implicit default.
+ * Phase 5A — `draft` opts into Payload's `draft: true` local-API param
+ * (returns the latest draft version if one exists, published otherwise)
+ * and drops the `_status: "published"` filter, so an unpublished edit
+ * becomes visible. Only ever passed `true` from the Draft Mode-gated call
+ * sites (app/api/draft/route.ts and the [slug] page's
+ * generateMetadata/default export, both behind isPreviewMode()) — every
+ * other caller keeps the exact previous published-only behavior by
+ * simply omitting the argument, so this is additive, not a behavior
+ * change to the existing default path. See PHASE5-LIVE-PREVIEW-PLAN.md
+ * §2's explicit rule: the public fetch path must never gain a code path
+ * that can return unpublished content by default.
+ *
+ * A plain boolean, not an options object — so that when
+ * generateMetadata() and the page component both call
+ * getPageBySlug(slug, true) for the same request, React's cache()
+ * recognizes the identical primitive arguments and reuses the one query,
+ * exactly like every other 2-arg cached function in this directory
+ * (getFaqsByScope). An options object literal would be a fresh reference
+ * on every call and defeat that memoization.
  */
-export const getPageBySlug = cache(async (slug: string): Promise<PageData | null> => {
-  if (isReservedSlug(slug)) return null;
+export const getPageBySlug = cache(
+  async (slug: string, draft: boolean = false): Promise<PageData | null> => {
+    if (isReservedSlug(slug)) return null;
 
-  const payload = await getCms();
-  const result = await payload.find({
-    collection: "pages",
-    where: { slug: { equals: slug }, _status: { equals: "published" } },
-    // depth: 1 — populates ogImage (a Media relationship), matching the
-    // pattern already established in lib/cms/homepage.ts.
-    depth: 1,
-    limit: 1,
-  });
-  const doc = result.docs[0] as unknown as PayloadPageDoc | undefined;
-  return doc ? toPageData(doc) : null;
-});
+    const payload = await getCms();
+    const result = await payload.find({
+      collection: "pages",
+      where: draft ? { slug: { equals: slug } } : { slug: { equals: slug }, _status: { equals: "published" } },
+      draft,
+      // depth: 1 — populates ogImage (a Media relationship), matching the
+      // pattern already established in lib/cms/homepage.ts.
+      depth: 1,
+      limit: 1,
+    });
+    const doc = result.docs[0] as unknown as PayloadPageDoc | undefined;
+    return doc ? toPageData(doc) : null;
+  },
+);
 
 /**
  * Feeds both generateStaticParams (app/(app)/[slug]/page.tsx) and the

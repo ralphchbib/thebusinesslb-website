@@ -92,17 +92,29 @@ export const getFeaturedCaseStudies = cache(async (): Promise<CaseStudy[]> => {
   return Promise.all(docs.map(toCaseStudy));
 });
 
-export const getCaseStudyBySlug = cache(async (slug: string): Promise<CaseStudy | null> => {
-  const payload = await getCms();
-  const result = await payload.find({
-    collection: "case-studies",
-    where: { slug: { equals: slug }, _status: { equals: "published" } },
-    depth: 1,
-    limit: 1,
-  });
-  const doc = result.docs[0] as unknown as PayloadCaseStudyDoc | undefined;
-  return doc ? toCaseStudy(doc) : null;
-});
+/**
+ * Phase 5A — `draft` mirrors lib/cms/pages.ts's getPageBySlug: a plain
+ * boolean (not an options object, so React's cache() actually shares the
+ * query between generateMetadata() and the page component) that opts
+ * into Payload's `draft: true` local-API param and drops the
+ * `_status: "published"` filter. Only ever passed `true` from the
+ * Draft Mode-gated call sites; every existing caller keeps the exact
+ * previous published-only behavior by omitting the argument.
+ */
+export const getCaseStudyBySlug = cache(
+  async (slug: string, draft: boolean = false): Promise<CaseStudy | null> => {
+    const payload = await getCms();
+    const result = await payload.find({
+      collection: "case-studies",
+      where: draft ? { slug: { equals: slug } } : { slug: { equals: slug }, _status: { equals: "published" } },
+      draft,
+      depth: 1,
+      limit: 1,
+    });
+    const doc = result.docs[0] as unknown as PayloadCaseStudyDoc | undefined;
+    return doc ? toCaseStudy(doc) : null;
+  },
+);
 
 export const getPublishedCaseStudySlugs = cache(async (): Promise<string[]> => {
   const payload = await getCms();
