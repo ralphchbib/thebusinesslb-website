@@ -44,4 +44,7 @@ export interface ServiceContent {
   afterLaunch?: { h2: string; body: string };
   faqs: ServiceFaq[];
   relatedServices: string[];
+  // Phase 4C — optional OG image, resolved from the Media relationship.
+  // Same "only from a live Payload document" caveat as `id` above.
+  ogImage?: string;
 }

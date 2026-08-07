@@ -108,5 +108,11 @@ export const Services: CollectionConfig = {
 
     { name: "metaTitle", type: "text", required: true, maxLength: 60 },
     { name: "metaDescription", type: "textarea", required: true, maxLength: 155 },
+    {
+      name: "ogImage",
+      type: "upload",
+      relationTo: "media",
+      admin: { description: "Optional. Leave blank to use the site default social-share image." },
+    },
   ],
 };
