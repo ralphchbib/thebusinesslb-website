@@ -151,6 +151,8 @@ export interface PayloadHeroBlockDoc {
   ctaSecondaryLabel?: string | null;
   ctaSecondaryHref?: string | null;
   reassurance?: string | null;
+  // Phase 6A — optional background image.
+  backgroundImage?: number | PayloadMediaDoc | null;
 }
 
 export interface PayloadTextBlockDoc {
@@ -259,10 +261,43 @@ export interface PayloadCaseStudiesBlockDoc {
   caseStudies?: (number | PayloadCaseStudyDoc)[] | null;
 }
 
+// Phase 6A — Advanced Page Builder.
+export interface PayloadRichContentBlockDoc {
+  id?: string;
+  blockType: "richContent";
+  isVisible?: boolean | null;
+  eyebrow?: string | null;
+  h2?: string | null;
+  content: PayloadArticleBodyBlock[];
+}
+
+export interface PayloadFaqPageBlockDoc {
+  id?: string;
+  blockType: "faqBlock";
+  isVisible?: boolean | null;
+  eyebrow?: string | null;
+  h2?: string | null;
+  faqs?: (number | PayloadFaqDoc)[] | null;
+  surface?: "white" | "mist" | null;
+}
+
+export interface PayloadServicesGridBlockDoc {
+  id?: string;
+  blockType: "servicesGridBlock";
+  isVisible?: boolean | null;
+  eyebrow?: string | null;
+  h2?: string | null;
+  intro?: string | null;
+  services?: (number | PayloadServiceDoc)[] | null;
+}
+
 export type PayloadPageBlockDoc =
   | PayloadHeroBlockDoc
   | PayloadTextBlockDoc
   | PayloadCtaBlockDoc
+  | PayloadRichContentBlockDoc
+  | PayloadFaqPageBlockDoc
+  | PayloadServicesGridBlockDoc
   | PayloadTestimonialsBlockDoc
   | PayloadCaseStudiesBlockDoc;
 

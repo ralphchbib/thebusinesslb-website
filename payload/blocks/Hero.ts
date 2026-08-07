@@ -22,5 +22,15 @@ export const HeroBlock: Block = {
     { name: "ctaSecondaryLabel", type: "text" },
     { name: "ctaSecondaryHref", type: "text" },
     { name: "reassurance", type: "text" },
+    {
+      // Phase 6A — optional background image, reusing the Media Library
+      // pattern already established across the project (Homepage.heroImage,
+      // Services.ogImage, etc.). Falls back to the existing plain white
+      // background when left blank — fully backward-compatible.
+      name: "backgroundImage",
+      type: "upload",
+      relationTo: "media",
+      admin: { description: "Optional. Leave blank for a plain white background (current default look)." },
+    },
   ],
 };
