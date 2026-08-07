@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { getCms } from "./client";
-import type { PayloadSiteSettingsDoc } from "./types";
+import type { PayloadSiteSettingsDoc, PayloadMediaDoc } from "./types";
 
 export interface SiteSettingsData {
   siteName: string;
@@ -24,6 +24,22 @@ export interface SiteSettingsData {
   servicesHubConnectH2?: string;
   servicesHubConnectBody?: string;
   servicesPricingTable: { name: string; covers: string; range: string }[];
+  // Phase 4C — sitewide SEO fallbacks. See PHASE4C-SEO-PLAN.md §A.
+  defaultSeoTitle?: string;
+  defaultMetaDescription?: string;
+  defaultOgImage?: string;
+  defaultTwitterImage?: string;
+  schemaDescription?: string;
+  schemaPriceRange?: string;
+  schemaAreaServed?: string;
+}
+
+// Same helper as lib/cms/homepage.ts — resolves a Media relationship to a
+// plain URL, ignoring alt/width/height since none of this global's image
+// fields render an <img>/<Image> directly (they only ever feed OG/Twitter
+// meta tags).
+function resolveMediaUrl(media: number | PayloadMediaDoc | null | undefined): string | undefined {
+  return typeof media === "object" && media ? media.url : undefined;
 }
 
 // Wrapped in React's cache() — see the equivalent note in lib/cms/services.ts.
@@ -31,7 +47,10 @@ export const getSiteSettings = cache(async (): Promise<SiteSettingsData> => {
   const payload = await getCms();
   const doc = (await payload.findGlobal({
     slug: "site-settings",
-    depth: 0,
+    // depth: 1 — populates defaultOgImage/defaultTwitterImage (Media
+    // relationships), matching the pattern already established in
+    // lib/cms/homepage.ts.
+    depth: 1,
   })) as unknown as PayloadSiteSettingsDoc;
   return {
     siteName: doc.siteName,
@@ -59,5 +78,12 @@ export const getSiteSettings = cache(async (): Promise<SiteSettingsData> => {
       covers: r.covers,
       range: r.range,
     })),
+    defaultSeoTitle: doc.defaultSeoTitle || undefined,
+    defaultMetaDescription: doc.defaultMetaDescription || undefined,
+    defaultOgImage: resolveMediaUrl(doc.defaultOgImage),
+    defaultTwitterImage: resolveMediaUrl(doc.defaultTwitterImage),
+    schemaDescription: doc.schemaDescription || undefined,
+    schemaPriceRange: doc.schemaPriceRange || undefined,
+    schemaAreaServed: doc.schemaAreaServed || undefined,
   };
 });

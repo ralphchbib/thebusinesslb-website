@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Mail } from "lucide-react";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { faqSchema } from "@/lib/seo/schema-org";
 import { Breadcrumb } from "@/components/blocks/breadcrumb";
 import { Section } from "@/components/blocks/section";
 import { Reveal } from "@/components/motion/reveal";
@@ -23,6 +24,13 @@ export default async function ContactPage() {
   const faqs = await getFaqsByScope("contact");
   return (
     <>
+      {faqs.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema(faqs)) }}
+        />
+      )}
+
       <Breadcrumb items={[{ name: "Contact" }]} />
 
       <Section surface="white">

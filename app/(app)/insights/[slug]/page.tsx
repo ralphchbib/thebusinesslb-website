@@ -3,13 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { breadcrumbSchema } from "@/lib/seo/schema-org";
-import { siteConfig } from "@/lib/config";
+import { breadcrumbSchema, articleSchema } from "@/lib/seo/schema-org";
 import { Breadcrumb } from "@/components/blocks/breadcrumb";
 import { Section } from "@/components/blocks/section";
 import { Card } from "@/components/ui/card";
 import { getArticleBySlug, getPublishedArticleSlugs } from "@/lib/cms/articles";
 import { getServicesBySlugs } from "@/lib/cms/services";
+import { getSiteSettings } from "@/lib/cms/site-settings";
 
 export async function generateStaticParams() {
   const slugs = await getPublishedArticleSlugs();
@@ -22,12 +22,13 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const article = await getArticleBySlug(slug);
+  const [article, settings] = await Promise.all([getArticleBySlug(slug), getSiteSettings()]);
   if (!article) return {};
   return buildMetadata({
     title: article.metaTitle,
     description: article.metaDescription,
     path: `/insights/${article.slug}/`,
+    ogImage: article.ogImage ?? settings.defaultOgImage,
   });
 }
 
@@ -37,15 +38,12 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   if (!article) notFound();
 
   const jsonLd = [
-    {
-      "@context": "https://schema.org",
-      "@type": "Article",
-      headline: article.title,
+    articleSchema({
+      title: article.title,
       description: article.excerpt,
       datePublished: article.publishedAt,
-      author: { "@type": "Person", name: siteConfig.founder },
-      publisher: { "@type": "Organization", name: siteConfig.name },
-    },
+      image: article.ogImage,
+    }),
     breadcrumbSchema([
       { name: "Insights", path: "/insights/" },
       { name: article.title, path: `/insights/${article.slug}/` },

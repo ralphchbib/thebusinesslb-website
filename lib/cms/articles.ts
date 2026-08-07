@@ -1,7 +1,13 @@
 import { cache } from "react";
 import { getCms } from "./client";
 import type { Article, ArticleBlock } from "@/content/insights/types";
-import type { PayloadArticleDoc, PayloadArticleBlockType } from "./types";
+import type { PayloadArticleDoc, PayloadArticleBlockType, PayloadMediaDoc } from "./types";
+
+// Same helper as lib/cms/homepage.ts — resolves a Media relationship to a
+// plain URL.
+function resolveMediaUrl(media: number | PayloadMediaDoc | null | undefined): string | undefined {
+  return typeof media === "object" && media ? media.url : undefined;
+}
 
 const blockTypeFromPayload: Record<PayloadArticleBlockType, ArticleBlock["type"]> = {
   paragraph: "p",
@@ -37,6 +43,7 @@ function toArticle(doc: PayloadArticleDoc): Article {
     relatedServices: (doc.relatedServices ?? [])
       .map((r) => (typeof r === "object" ? r.slug : null))
       .filter((slug): slug is string => Boolean(slug)),
+    ogImage: resolveMediaUrl(doc.ogImage),
   };
 }
 

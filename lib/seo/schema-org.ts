@@ -1,6 +1,17 @@
 import { siteConfig } from "@/lib/config";
 
-export function organizationSchema() {
+/**
+ * Phase 4C — description/priceRange/areaServed can be overridden from
+ * Site Settings (see lib/cms/site-settings.ts's schemaDescription/
+ * schemaPriceRange/schemaAreaServed). The literals below remain as the
+ * fallback so this schema is never incomplete before an editor fills
+ * those fields in.
+ */
+export function organizationSchema(overrides?: {
+  description?: string;
+  priceRange?: string;
+  areaServed?: string;
+}) {
   const sameAs = [siteConfig.instagramUrl, siteConfig.linkedinUrl].filter(Boolean);
   return {
     "@context": "https://schema.org",
@@ -10,15 +21,27 @@ export function organizationSchema() {
     logo: `${siteConfig.url}/logo-wordmark-ink.svg`,
     image: `${siteConfig.url}/og/default.png`,
     description:
+      overrides?.description ||
       "Digital growth and business transformation company helping Lebanese SMEs build their digital presence and grow.",
     slogan: siteConfig.slogan,
     foundingDate: siteConfig.foundingDate,
     founder: { "@type": "Person", name: siteConfig.founder },
     email: siteConfig.email,
     address: { "@type": "PostalAddress", addressCountry: "LB" },
-    areaServed: [{ "@type": "Country", name: "Lebanon" }],
-    priceRange: "$$",
+    areaServed: [{ "@type": "Country", name: overrides?.areaServed || "Lebanon" }],
+    priceRange: overrides?.priceRange || "$$",
     sameAs,
+  };
+}
+
+/** Sitewide entry point — used on the homepage only. See PHASE4C-SEO-PLAN.md §B/§H. */
+export function websiteSchema() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteConfig.name,
+    url: siteConfig.url,
+    description: siteConfig.serviceStatement,
   };
 }
 
@@ -76,11 +99,39 @@ export function personSchema() {
 }
 
 /**
+ * Phase 4C — extracted from what was previously an inline object literal
+ * in app/(app)/insights/[slug]/page.tsx (the one schema type in this
+ * codebase that wasn't centralized here, unlike the near-identical
+ * caseStudySchema() below). Produces the exact same fields as the
+ * original inline version when `image` is omitted — verified byte-
+ * identical before the `image` field was added, see
+ * PHASE4C-4-VALIDATION.md. Deliberately does not add a `url` field
+ * (unlike caseStudySchema()) to keep this refactor's diff minimal;
+ * worth revisiting for consistency in a future pass.
+ */
+export function articleSchema(params: {
+  title: string;
+  description: string;
+  datePublished: string;
+  image?: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: params.title,
+    description: params.description,
+    datePublished: params.datePublished,
+    author: { "@type": "Person", name: siteConfig.founder },
+    publisher: { "@type": "Organization", name: siteConfig.name },
+    ...(params.image ? { image: params.image } : {}),
+  };
+}
+
+/**
  * Article is the correct, valid schema.org type here — there's no
  * dedicated "case study" type in the vocabulary. Matches how Articles
- * (app/(app)/insights/[slug]/page.tsx) already use "@type": "Article"
- * inline; this one lives in the shared file instead, which is the better
- * pattern going forward.
+ * now use articleSchema() above; this one lives in the shared file too,
+ * the pattern every schema type in this codebase now follows.
  */
 export function caseStudySchema(params: {
   title: string;

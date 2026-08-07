@@ -48,6 +48,8 @@ export interface PayloadServiceDoc {
   relatedServices?: (number | PayloadServiceDoc)[] | null;
   metaTitle: string;
   metaDescription: string;
+  // Phase 4C — optional OG image, falls back to Site Settings' default.
+  ogImage?: number | PayloadMediaDoc | null;
 }
 
 export type PayloadArticleBlockType = "paragraph" | "heading" | "list";
@@ -72,6 +74,8 @@ export interface PayloadArticleDoc {
   relatedServices?: (number | PayloadServiceDoc)[] | null;
   metaTitle: string;
   metaDescription: string;
+  // Phase 4C — optional OG image, falls back to Site Settings' default.
+  ogImage?: number | PayloadMediaDoc | null;
 }
 
 export interface PayloadFaqDoc {
@@ -121,6 +125,14 @@ export interface PayloadSiteSettingsDoc {
   servicesHubConnectH2?: string | null;
   servicesHubConnectBody?: string | null;
   servicesPricingTable?: { id?: string; name: string; covers: string; range: string }[] | null;
+  // Phase 4C — sitewide SEO fallbacks. See PHASE4C-SEO-PLAN.md §A.
+  defaultSeoTitle?: string | null;
+  defaultMetaDescription?: string | null;
+  defaultOgImage?: number | PayloadMediaDoc | null;
+  defaultTwitterImage?: number | PayloadMediaDoc | null;
+  schemaDescription?: string | null;
+  schemaPriceRange?: string | null;
+  schemaAreaServed?: string | null;
 }
 
 // Phase 2 foundation — see PHASE2-ARCHITECTURE.md. Hero/Text/Cta only;
@@ -259,6 +271,9 @@ export interface PayloadPageDoc {
   pageType: "landing" | "campaign" | "seasonal";
   seoTitle: string;
   seoDescription: string;
+  // Phase 4C — see PHASE4C-SEO-PLAN.md §E.
+  ogImage?: number | PayloadMediaDoc | null;
+  noindex?: boolean | null;
   blocks?: PayloadPageBlockDoc[] | null;
   _status?: "draft" | "published" | null;
 }

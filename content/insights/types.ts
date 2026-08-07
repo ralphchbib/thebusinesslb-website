@@ -15,4 +15,6 @@ export interface Article {
   readingMinutes: number;
   body: ArticleBlock[];
   relatedServices: string[];
+  // Phase 4C — optional OG image, resolved from the Media relationship.
+  ogImage?: string;
 }

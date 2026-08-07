@@ -2,7 +2,13 @@ import { cache } from "react";
 import { getCms } from "./client";
 import { getFaqsByScope } from "./faqs";
 import type { ServiceContent } from "@/content/services/types";
-import type { PayloadServiceDoc } from "./types";
+import type { PayloadServiceDoc, PayloadMediaDoc } from "./types";
+
+// Same helper as lib/cms/homepage.ts — resolves a Media relationship to a
+// plain URL.
+function resolveMediaUrl(media: number | PayloadMediaDoc | null | undefined): string | undefined {
+  return typeof media === "object" && media ? media.url : undefined;
+}
 
 /**
  * Maps a Payload `services` document (+ its related FAQs, fetched
@@ -52,6 +58,7 @@ function toServiceContent(
     relatedServices: (doc.relatedServices ?? [])
       .map((r) => (typeof r === "object" ? r.slug : null))
       .filter((slug): slug is string => Boolean(slug)),
+    ogImage: resolveMediaUrl(doc.ogImage),
   };
 }
 

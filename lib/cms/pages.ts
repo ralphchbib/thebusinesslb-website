@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { getCms } from "./client";
-import type { PayloadPageDoc } from "./types";
+import type { PayloadPageDoc, PayloadMediaDoc } from "./types";
 import { isReservedSlug } from "./reserved-slugs";
 
 export interface PageData {
@@ -8,7 +8,15 @@ export interface PageData {
   slug: string;
   seoTitle: string;
   seoDescription: string;
+  ogImage?: string;
+  noindex: boolean;
   blocks: PayloadPageDoc["blocks"];
+}
+
+// Same helper as lib/cms/homepage.ts — resolves a Media relationship to a
+// plain URL.
+function resolveMediaUrl(media: number | PayloadMediaDoc | null | undefined): string | undefined {
+  return typeof media === "object" && media ? media.url : undefined;
 }
 
 function toPageData(doc: PayloadPageDoc): PageData {
@@ -17,6 +25,8 @@ function toPageData(doc: PayloadPageDoc): PageData {
     slug: doc.slug,
     seoTitle: doc.seoTitle,
     seoDescription: doc.seoDescription,
+    ogImage: resolveMediaUrl(doc.ogImage),
+    noindex: doc.noindex ?? false,
     blocks: doc.blocks ?? [],
   };
 }
@@ -49,7 +59,9 @@ export const getPageBySlug = cache(async (slug: string): Promise<PageData | null
   const result = await payload.find({
     collection: "pages",
     where: { slug: { equals: slug }, _status: { equals: "published" } },
-    depth: 0,
+    // depth: 1 — populates ogImage (a Media relationship), matching the
+    // pattern already established in lib/cms/homepage.ts.
+    depth: 1,
     limit: 1,
   });
   const doc = result.docs[0] as unknown as PayloadPageDoc | undefined;
