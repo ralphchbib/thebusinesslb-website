@@ -87,6 +87,22 @@ export const Pages: CollectionConfig = {
     { name: "seoTitle", type: "text", required: true, maxLength: 60 },
     { name: "seoDescription", type: "textarea", required: true, maxLength: 155 },
     {
+      name: "ogImage",
+      type: "upload",
+      relationTo: "media",
+      admin: { description: "Optional. Leave blank to use the site default social-share image." },
+    },
+    {
+      name: "noindex",
+      type: "checkbox",
+      defaultValue: false,
+      admin: {
+        description:
+          "Hide this page from search engines (adds a noindex tag). Leave unchecked for normal pages — " +
+          "use this for temporary campaign or seasonal pages you don't want competing in search results.",
+      },
+    },
+    {
       name: "blocks",
       type: "blocks",
       minRows: 1,

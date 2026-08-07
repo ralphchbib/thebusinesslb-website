@@ -271,6 +271,9 @@ export interface PayloadPageDoc {
   pageType: "landing" | "campaign" | "seasonal";
   seoTitle: string;
   seoDescription: string;
+  // Phase 4C — see PHASE4C-SEO-PLAN.md §E.
+  ogImage?: number | PayloadMediaDoc | null;
+  noindex?: boolean | null;
   blocks?: PayloadPageBlockDoc[] | null;
   _status?: "draft" | "published" | null;
 }

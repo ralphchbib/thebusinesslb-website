@@ -44,12 +44,16 @@ export async function generateMetadata({
   const { slug } = await params;
   const [page, settings] = await Promise.all([getPageBySlug(slug), getSiteSettings()]);
   if (!page) return {};
-  return buildMetadata({
+  const metadata = buildMetadata({
     title: page.seoTitle,
     description: page.seoDescription,
     path: `/${page.slug}/`,
-    ogImage: settings.defaultOgImage,
+    ogImage: page.ogImage ?? settings.defaultOgImage,
   });
+  if (page.noindex) {
+    metadata.robots = { index: false, follow: true };
+  }
+  return metadata;
 }
 
 export default async function CmsPage({ params }: { params: Promise<{ slug: string }> }) {
