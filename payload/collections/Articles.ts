@@ -1,15 +1,36 @@
 import type { CollectionConfig } from "payload";
-import { anyone, adminOrEditor, adminOnly } from "../access";
+import { adminOrEditor, adminOnly } from "../access";
 import { revalidateAfterChange, revalidateAfterDelete } from "../hooks/revalidate";
+import { siteConfig } from "@/lib/config";
 
+/**
+ * Phase 5B — gains native draft/publish versioning. See the equivalent
+ * comment in Services.ts for the full rationale (same pattern, same
+ * isPublished-retirement approach); Articles is the simpler of the two
+ * since nothing else in the schema references `articles` (confirmed via
+ * PHASE5B-ARCHITECTURE-REVIEW.md §4 — zero inbound relationships).
+ */
 export const Articles: CollectionConfig = {
   slug: "articles",
   admin: {
     useAsTitle: "title",
-    defaultColumns: ["title", "topic", "isPublished", "publishedAt"],
+    defaultColumns: ["title", "topic", "_status", "publishedAt"],
+    // Phase 5B — same "Preview" button pattern as Pages.ts/CaseStudies.ts.
+    preview: (doc) => {
+      const secret = process.env.PREVIEW_SECRET;
+      if (!secret || typeof doc?.slug !== "string") return null;
+      return `${siteConfig.url}/api/draft?secret=${secret}&collection=articles&slug=${encodeURIComponent(doc.slug)}`;
+    },
+  },
+  versions: {
+    drafts: true,
   },
   access: {
-    read: anyone,
+    // Same reasoning as Pages.ts/CaseStudies.ts/Testimonials.ts/Services.ts.
+    read: ({ req: { user } }) => {
+      if (user) return true;
+      return { _status: { equals: "published" } };
+    },
     create: adminOrEditor,
     update: adminOrEditor,
     delete: adminOnly,
@@ -26,7 +47,17 @@ export const Articles: CollectionConfig = {
       unique: true,
       admin: { description: "URL segment — /insights/{slug}/" },
     },
-    { name: "isPublished", type: "checkbox", defaultValue: true },
+    {
+      name: "isPublished",
+      type: "checkbox",
+      defaultValue: true,
+      admin: {
+        readOnly: true,
+        description:
+          "Deprecated — publish state is now controlled by the Save Draft / Publish buttons above. " +
+          "Kept read-only for rollback safety; no longer read by the site.",
+      },
+    },
     { name: "title", type: "text", required: true },
     { name: "excerpt", type: "textarea", required: true },
     {

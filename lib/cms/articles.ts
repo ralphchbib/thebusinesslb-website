@@ -52,7 +52,7 @@ export const getAllArticles = cache(async (): Promise<Article[]> => {
   const payload = await getCms();
   const result = await payload.find({
     collection: "articles",
-    where: { isPublished: { equals: true } },
+    where: { _status: { equals: "published" } },
     sort: "-publishedAt",
     depth: 1,
     limit: 100,
@@ -66,23 +66,30 @@ export async function getRecentArticles(count: number): Promise<Article[]> {
   return all.slice(0, count);
 }
 
-export const getArticleBySlug = cache(async (slug: string): Promise<Article | null> => {
-  const payload = await getCms();
-  const result = await payload.find({
-    collection: "articles",
-    where: { slug: { equals: slug }, isPublished: { equals: true } },
-    depth: 1,
-    limit: 1,
-  });
-  const doc = result.docs[0] as unknown as PayloadArticleDoc | undefined;
-  return doc ? toArticle(doc) : null;
-});
+/**
+ * Phase 5B — `draft` mirrors lib/cms/pages.ts's getPageBySlug (see the
+ * equivalent comment on getServiceBySlug in lib/cms/services.ts).
+ */
+export const getArticleBySlug = cache(
+  async (slug: string, draft: boolean = false): Promise<Article | null> => {
+    const payload = await getCms();
+    const result = await payload.find({
+      collection: "articles",
+      where: draft ? { slug: { equals: slug } } : { slug: { equals: slug }, _status: { equals: "published" } },
+      draft,
+      depth: 1,
+      limit: 1,
+    });
+    const doc = result.docs[0] as unknown as PayloadArticleDoc | undefined;
+    return doc ? toArticle(doc) : null;
+  },
+);
 
 export const getPublishedArticleSlugs = cache(async (): Promise<string[]> => {
   const payload = await getCms();
   const result = await payload.find({
     collection: "articles",
-    where: { isPublished: { equals: true } },
+    where: { _status: { equals: "published" } },
     depth: 0,
     limit: 100,
     select: { slug: true },

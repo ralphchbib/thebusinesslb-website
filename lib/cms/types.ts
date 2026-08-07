@@ -27,6 +27,7 @@ export interface PayloadServiceDoc {
   id: number;
   slug: string;
   isPublished?: boolean | null;
+  _status?: "draft" | "published" | null;
   order?: number | null;
   eyebrow?: string | null;
   h1: string;
@@ -65,6 +66,7 @@ export interface PayloadArticleDoc {
   id: number;
   slug: string;
   isPublished?: boolean | null;
+  _status?: "draft" | "published" | null;
   title: string;
   excerpt: string;
   topic: "ecommerce" | "websites" | "social" | "ai" | "strategy" | "lebanon-business";
