@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { breadcrumbSchema } from "@/lib/seo/schema-org";
 import { Breadcrumb } from "@/components/blocks/breadcrumb";
 import { Section } from "@/components/blocks/section";
 import { Reveal } from "@/components/motion/reveal";
@@ -18,6 +19,13 @@ export default async function CaseStudiesPage() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbSchema([{ name: "Case Studies", path: "/case-studies/" }])),
+        }}
+      />
+
       <Breadcrumb items={[{ name: "Case Studies" }]} />
 
       <Section surface="white">
