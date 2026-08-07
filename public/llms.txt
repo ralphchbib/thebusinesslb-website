@@ -9,6 +9,7 @@ THE BUSINESS lb offers: websites, Shopify/e-commerce stores, social media manage
 - [Home](https://thebusinesslb.com/): overview of services and positioning
 - [Digital Business Assessment](https://thebusinesslb.com/digital-assessment/): the primary offer, free for the first five businesses
 - [Services](https://thebusinesslb.com/services/): hub for all five services
+- [Case Studies](https://thebusinesslb.com/case-studies/): real client projects, the problem, what was done, and the results
 - [Pricing](https://thebusinesslb.com/pricing/): indicative price ranges by package
 - [About](https://thebusinesslb.com/about/): company positioning and beliefs
 - [Ralph Chbib](https://thebusinesslb.com/about/ralph-chbib/): founder profile
