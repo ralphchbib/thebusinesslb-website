@@ -74,6 +74,8 @@ export interface PayloadArticleDoc {
   relatedServices?: (number | PayloadServiceDoc)[] | null;
   metaTitle: string;
   metaDescription: string;
+  // Phase 4C — optional OG image, falls back to Site Settings' default.
+  ogImage?: number | PayloadMediaDoc | null;
 }
 
 export interface PayloadFaqDoc {
