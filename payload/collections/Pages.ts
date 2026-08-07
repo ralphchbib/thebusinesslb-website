@@ -7,6 +7,7 @@ import { CtaBlock } from "../blocks/Cta";
 import { TestimonialsBlock } from "../blocks/Testimonials";
 import { CaseStudiesBlock } from "../blocks/CaseStudies";
 import { isReservedSlug } from "@/lib/cms/reserved-slugs";
+import { siteConfig } from "@/lib/config";
 
 /**
  * Phase 2 foundation shipped Hero, Text, and Cta only. Phase 3 adds
@@ -25,6 +26,16 @@ export const Pages: CollectionConfig = {
     defaultColumns: ["title", "slug", "pageType", "_status"],
     description:
       "Landing, campaign, and seasonal pages — separate from the site's core Services, Articles, FAQs, Navigation, and Site Settings content.",
+    // Phase 5A — shows a "Preview" button in the admin Edit view, linking
+    // through /api/draft (which verifies PREVIEW_SECRET + an
+    // authenticated session before enabling Draft Mode). Returns null
+    // (hides the button) rather than a broken link if the secret isn't
+    // configured in this environment.
+    preview: (doc) => {
+      const secret = process.env.PREVIEW_SECRET;
+      if (!secret || typeof doc?.slug !== "string") return null;
+      return `${siteConfig.url}/api/draft?secret=${secret}&collection=pages&slug=${encodeURIComponent(doc.slug)}`;
+    },
   },
   // Native draft/publish workflow: editors can save work without it going
   // live, then explicitly Publish when ready. See the access.read note

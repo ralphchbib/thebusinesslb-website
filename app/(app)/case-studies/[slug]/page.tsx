@@ -6,6 +6,7 @@ import { getCaseStudyBySlug, getPublishedCaseStudySlugs } from "@/lib/cms/case-s
 import { getSiteSettings } from "@/lib/cms/site-settings";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { breadcrumbSchema, caseStudySchema } from "@/lib/seo/schema-org";
+import { isPreviewMode, PREVIEW_ROBOTS } from "@/lib/seo/preview";
 import { Breadcrumb } from "@/components/blocks/breadcrumb";
 import { Section } from "@/components/blocks/section";
 import { TestimonialCard } from "@/components/blocks/testimonial-card";
@@ -27,19 +28,25 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const [caseStudy, settings] = await Promise.all([getCaseStudyBySlug(slug), getSiteSettings()]);
+  const preview = await isPreviewMode();
+  const [caseStudy, settings] = await Promise.all([getCaseStudyBySlug(slug, preview), getSiteSettings()]);
   if (!caseStudy) return {};
-  return buildMetadata({
+  const metadata = buildMetadata({
     title: caseStudy.seoTitle,
     description: caseStudy.seoDescription,
     path: `/case-studies/${caseStudy.slug}/`,
     ogImage: caseStudy.featuredImage?.url ?? settings.defaultOgImage,
   });
+  if (preview) {
+    metadata.robots = PREVIEW_ROBOTS;
+  }
+  return metadata;
 }
 
 export default async function CaseStudyPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const caseStudy = await getCaseStudyBySlug(slug);
+  const preview = await isPreviewMode();
+  const caseStudy = await getCaseStudyBySlug(slug, preview);
   if (!caseStudy) notFound();
 
   const jsonLd = [

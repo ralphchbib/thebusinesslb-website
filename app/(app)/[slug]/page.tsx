@@ -5,6 +5,7 @@ import { isReservedSlug } from "@/lib/cms/reserved-slugs";
 import { getSiteSettings } from "@/lib/cms/site-settings";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { breadcrumbSchema } from "@/lib/seo/schema-org";
+import { isPreviewMode, PREVIEW_ROBOTS } from "@/lib/seo/preview";
 import { BlockRenderer } from "@/components/blocks/page/block-renderer";
 
 /**
@@ -43,7 +44,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const [page, settings] = await Promise.all([getPageBySlug(slug), getSiteSettings()]);
+  const preview = await isPreviewMode();
+  const [page, settings] = await Promise.all([getPageBySlug(slug, preview), getSiteSettings()]);
   if (!page) return {};
   const metadata = buildMetadata({
     title: page.seoTitle,
@@ -51,7 +53,12 @@ export async function generateMetadata({
     path: `/${page.slug}/`,
     ogImage: page.ogImage ?? settings.defaultOgImage,
   });
-  if (page.noindex) {
+  // Draft Mode always wins over the page's own noindex field — an
+  // unpublished edit must never be indexable, regardless of what it will
+  // eventually be set to once published.
+  if (preview) {
+    metadata.robots = PREVIEW_ROBOTS;
+  } else if (page.noindex) {
     metadata.robots = { index: false, follow: true };
   }
   return metadata;
@@ -59,7 +66,8 @@ export async function generateMetadata({
 
 export default async function CmsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const page = await getPageBySlug(slug);
+  const preview = await isPreviewMode();
+  const page = await getPageBySlug(slug, preview);
   if (!page) notFound();
 
   return (
