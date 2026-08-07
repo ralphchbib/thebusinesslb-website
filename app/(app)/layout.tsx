@@ -10,6 +10,7 @@ import { siteConfig } from "@/lib/config";
 import { organizationSchema } from "@/lib/seo/schema-org";
 import { getNavItems } from "@/lib/cms/navigation";
 import { getServicePriceMap } from "@/lib/cms/services";
+import { getSiteSettings } from "@/lib/cms/site-settings";
 
 const bodoni = Bodoni_Moda({
   subsets: ["latin"],
@@ -50,11 +51,12 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [primaryNav, megaMenuServices, megaMenuStartHere, servicePrices] = await Promise.all([
+  const [primaryNav, megaMenuServices, megaMenuStartHere, servicePrices, settings] = await Promise.all([
     getNavItems("header_primary"),
     getNavItems("header_mega_col1"),
     getNavItems("header_mega_col2"),
     getServicePriceMap(),
+    getSiteSettings(),
   ]);
 
   return (
@@ -65,7 +67,15 @@ export default async function RootLayout({
       <body className="flex min-h-full flex-col">
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema()) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(
+              organizationSchema({
+                description: settings.schemaDescription,
+                priceRange: settings.schemaPriceRange,
+                areaServed: settings.schemaAreaServed,
+              }),
+            ),
+          }}
         />
         <a
           href="#main"

@@ -17,14 +17,15 @@ import { FaqBlock } from "@/components/blocks/faq-block";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getFaqsByScope } from "@/lib/cms/faqs";
 import { getHomepage } from "@/lib/cms/homepage";
+import { getSiteSettings } from "@/lib/cms/site-settings";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const home = await getHomepage();
+  const [home, settings] = await Promise.all([getHomepage(), getSiteSettings()]);
   return buildMetadata({
     title: home.seo.metaTitle,
     description: home.seo.metaDescription,
     path: "/",
-    ogImage: home.seo.ogImage,
+    ogImage: home.seo.ogImage ?? settings.defaultOgImage,
   });
 }
 

@@ -121,6 +121,14 @@ export interface PayloadSiteSettingsDoc {
   servicesHubConnectH2?: string | null;
   servicesHubConnectBody?: string | null;
   servicesPricingTable?: { id?: string; name: string; covers: string; range: string }[] | null;
+  // Phase 4C — sitewide SEO fallbacks. See PHASE4C-SEO-PLAN.md §A.
+  defaultSeoTitle?: string | null;
+  defaultMetaDescription?: string | null;
+  defaultOgImage?: number | PayloadMediaDoc | null;
+  defaultTwitterImage?: number | PayloadMediaDoc | null;
+  schemaDescription?: string | null;
+  schemaPriceRange?: string | null;
+  schemaAreaServed?: string | null;
 }
 
 // Phase 2 foundation — see PHASE2-ARCHITECTURE.md. Hero/Text/Cta only;

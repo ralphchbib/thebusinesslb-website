@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getServiceBySlug, getPublishedServiceSlugs } from "@/lib/cms/services";
+import { getSiteSettings } from "@/lib/cms/site-settings";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { breadcrumbSchema, faqSchema, serviceSchema } from "@/lib/seo/schema-org";
 import { Breadcrumb } from "@/components/blocks/breadcrumb";
@@ -28,12 +29,13 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const service = await getServiceBySlug(slug);
+  const [service, settings] = await Promise.all([getServiceBySlug(slug), getSiteSettings()]);
   if (!service) return {};
   return buildMetadata({
     title: service.metaTitle,
     description: service.metaDescription,
     path: `/services/${service.slug}/`,
+    ogImage: settings.defaultOgImage,
   });
 }
 

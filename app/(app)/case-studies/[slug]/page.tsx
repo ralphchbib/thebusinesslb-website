@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { getCaseStudyBySlug, getPublishedCaseStudySlugs } from "@/lib/cms/case-studies";
+import { getSiteSettings } from "@/lib/cms/site-settings";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { breadcrumbSchema, caseStudySchema } from "@/lib/seo/schema-org";
 import { Breadcrumb } from "@/components/blocks/breadcrumb";
@@ -26,13 +27,13 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const caseStudy = await getCaseStudyBySlug(slug);
+  const [caseStudy, settings] = await Promise.all([getCaseStudyBySlug(slug), getSiteSettings()]);
   if (!caseStudy) return {};
   return buildMetadata({
     title: caseStudy.seoTitle,
     description: caseStudy.seoDescription,
     path: `/case-studies/${caseStudy.slug}/`,
-    ogImage: caseStudy.featuredImage?.url,
+    ogImage: caseStudy.featuredImage?.url ?? settings.defaultOgImage,
   });
 }
 
