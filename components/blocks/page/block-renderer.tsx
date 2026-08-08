@@ -1,6 +1,9 @@
 import { PageHeroBlock } from "./hero-block";
 import { PageTextBlock } from "./text-block";
 import { PageCtaBlock } from "./cta-block";
+import { PageRichContentBlock } from "./rich-content-block";
+import { PageFaqBlock } from "./faq-block";
+import { PageServicesGridBlock } from "./services-grid-block";
 import { PageTestimonialsBlock } from "./testimonials-block";
 import { PageCaseStudiesBlock } from "./case-studies-block";
 import type { PayloadPageBlockDoc } from "@/lib/cms/types";
@@ -24,6 +27,12 @@ export function BlockRenderer({ blocks }: { blocks: PayloadPageBlockDoc[] }) {
               return <PageTextBlock key={block.id ?? i} {...block} />;
             case "cta":
               return <PageCtaBlock key={block.id ?? i} {...block} />;
+            case "richContent":
+              return <PageRichContentBlock key={block.id ?? i} {...block} />;
+            case "faqBlock":
+              return <PageFaqBlock key={block.id ?? i} {...block} />;
+            case "servicesGridBlock":
+              return <PageServicesGridBlock key={block.id ?? i} {...block} />;
             case "testimonialsBlock":
               return <PageTestimonialsBlock key={block.id ?? i} {...block} />;
             case "caseStudiesBlock":

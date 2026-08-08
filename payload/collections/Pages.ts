@@ -4,19 +4,25 @@ import { revalidatePageAfterChange, revalidatePageAfterDelete } from "../hooks/r
 import { HeroBlock } from "../blocks/Hero";
 import { TextBlock } from "../blocks/Text";
 import { CtaBlock } from "../blocks/Cta";
+import { RichContentBlock } from "../blocks/RichContent";
+import { FaqPageBlock } from "../blocks/FaqPageBlock";
+import { ServicesGridBlock } from "../blocks/ServicesGridBlock";
 import { TestimonialsBlock } from "../blocks/Testimonials";
 import { CaseStudiesBlock } from "../blocks/CaseStudies";
 import { isReservedSlug } from "@/lib/cms/reserved-slugs";
 import { siteConfig } from "@/lib/config";
 
 /**
- * Phase 2 foundation shipped Hero, Text, and Cta only. Phase 3 adds
+ * Phase 2 foundation shipped Hero, Text, and Cta only. Phase 3 added
  * Testimonials and Case Studies (both reference the two new collections
- * of the same name) — still not the full block library from
- * PHASE2-ARCHITECTURE.md §3, and the richText-based "Rich Content" block
- * specifically is still not part of this (§7.1 — gated on a separate
- * compatibility spike, since Phase 1 removed richText after it broke
- * Payload's CLI under Node 24).
+ * of the same name). Phase 6A adds Rich Content, FAQ, and Services Grid,
+ * plus a Background Image field on Hero — see
+ * PHASE6A-PAGE-BUILDER-PLAN.md. The richText-based "Rich Content" block
+ * flagged in PHASE2-ARCHITECTURE.md §7.1 as gated on a compatibility
+ * spike was re-tested as part of Phase 6A (still crashes — see the plan
+ * §2) — Rich Content here is a structured paragraph/heading/list array
+ * instead, the same pattern Article bodies already use, not a real
+ * richText field.
  */
 export const Pages: CollectionConfig = {
   slug: "pages",
@@ -117,7 +123,16 @@ export const Pages: CollectionConfig = {
       name: "blocks",
       type: "blocks",
       minRows: 1,
-      blocks: [HeroBlock, TextBlock, CtaBlock, TestimonialsBlock, CaseStudiesBlock],
+      blocks: [
+        HeroBlock,
+        TextBlock,
+        CtaBlock,
+        RichContentBlock,
+        FaqPageBlock,
+        ServicesGridBlock,
+        TestimonialsBlock,
+        CaseStudiesBlock,
+      ],
     },
   ],
 };

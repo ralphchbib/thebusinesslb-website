@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 import { getPageBySlug, getPublishedPageSlugs } from "@/lib/cms/pages";
 import { isReservedSlug } from "@/lib/cms/reserved-slugs";
 import { getSiteSettings } from "@/lib/cms/site-settings";
+import { getFaqsByIds } from "@/lib/cms/faqs";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { breadcrumbSchema } from "@/lib/seo/schema-org";
+import { breadcrumbSchema, faqSchema } from "@/lib/seo/schema-org";
 import { isPreviewMode, PREVIEW_ROBOTS } from "@/lib/seo/preview";
 import { BlockRenderer } from "@/components/blocks/page/block-renderer";
+import type { PayloadFaqPageBlockDoc } from "@/lib/cms/types";
 
 /**
  * Phase 2 foundation route for CMS-managed landing/campaign/seasonal
@@ -70,14 +72,29 @@ export default async function CmsPage({ params }: { params: Promise<{ slug: stri
   const page = await getPageBySlug(slug, preview);
   if (!page) notFound();
 
+  // Phase 6A — a Page using the FAQ block gets FAQPage structured data,
+  // matching how Homepage and Service pages already treat their FAQs.
+  // IDs are gathered across every FAQ block on the page (there can be
+  // more than one) and resolved once.
+  const faqBlockIds = (page.blocks ?? [])
+    .filter((b): b is PayloadFaqPageBlockDoc => b.blockType === "faqBlock")
+    .flatMap((b) => (b.faqs ?? []).map((f) => (typeof f === "object" ? f.id : f)));
+  const faqs = faqBlockIds.length > 0 ? await getFaqsByIds(faqBlockIds) : [];
+
+  const jsonLd = [
+    breadcrumbSchema([{ name: page.title, path: `/${page.slug}/` }]),
+    ...(faqs.length > 0 ? [faqSchema(faqs)] : []),
+  ];
+
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(breadcrumbSchema([{ name: page.title, path: `/${page.slug}/` }])),
-        }}
-      />
+      {jsonLd.map((schema, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      ))}
       <BlockRenderer blocks={page.blocks ?? []} />
     </>
   );
