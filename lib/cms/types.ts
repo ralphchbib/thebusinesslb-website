@@ -291,6 +291,91 @@ export interface PayloadServicesGridBlockDoc {
   services?: (number | PayloadServiceDoc)[] | null;
 }
 
+// Phase 6B — Landing Page Factory. See PHASE6B-BLOCK-GAP-ANALYSIS.md.
+export interface PayloadStatisticsBlockDoc {
+  id?: string;
+  blockType: "statistics";
+  isVisible?: boolean | null;
+  eyebrow?: string | null;
+  h2?: string | null;
+  stats: { id?: string; value: string; label: string }[];
+}
+
+export interface PayloadLogoCloudBlockDoc {
+  id?: string;
+  blockType: "logoCloud";
+  isVisible?: boolean | null;
+  eyebrow?: string | null;
+  h2?: string | null;
+  logos: { id?: string; logo: number | PayloadMediaDoc; name: string; href?: string | null }[];
+}
+
+export type PayloadFeatureGridIcon =
+  | "check"
+  | "star"
+  | "zap"
+  | "shield"
+  | "rocket"
+  | "users"
+  | "target"
+  | "trending-up";
+
+export interface PayloadFeatureGridBlockDoc {
+  id?: string;
+  blockType: "featureGrid";
+  isVisible?: boolean | null;
+  eyebrow?: string | null;
+  h2?: string | null;
+  intro?: string | null;
+  features: { id?: string; icon?: PayloadFeatureGridIcon | null; heading: string; body: string }[];
+}
+
+export interface PayloadPricingTierDoc {
+  id?: string;
+  name: string;
+  priceDisplay: string;
+  // Phase 6B — optional, structured-data-only clean numeric price. See
+  // payload/blocks/Pricing.ts's admin.description for why this is kept
+  // separate from priceDisplay (a free-text display string that isn't
+  // reliably parseable back into a valid schema.org Offer.price).
+  priceValueUSD?: number | null;
+  summary?: string | null;
+  features: PayloadTextItem[];
+  isRecommended?: boolean | null;
+  ctaLabel?: string | null;
+  ctaHref?: string | null;
+}
+
+export interface PayloadPricingBlockDoc {
+  id?: string;
+  blockType: "pricing";
+  isVisible?: boolean | null;
+  eyebrow?: string | null;
+  h2?: string | null;
+  intro?: string | null;
+  tiers: PayloadPricingTierDoc[];
+}
+
+export interface PayloadProcessBlockDoc {
+  id?: string;
+  blockType: "process";
+  isVisible?: boolean | null;
+  eyebrow?: string | null;
+  h2?: string | null;
+  steps: { id?: string; number: string; name: string; body: string }[];
+}
+
+export interface PayloadComparisonTableBlockDoc {
+  id?: string;
+  blockType: "comparisonTable";
+  isVisible?: boolean | null;
+  eyebrow?: string | null;
+  h2?: string | null;
+  leftColumnLabel?: string | null;
+  rightColumnLabel?: string | null;
+  rows: { id?: string; label: string; leftValue: string; rightValue: string }[];
+}
+
 export type PayloadPageBlockDoc =
   | PayloadHeroBlockDoc
   | PayloadTextBlockDoc
@@ -299,13 +384,30 @@ export type PayloadPageBlockDoc =
   | PayloadFaqPageBlockDoc
   | PayloadServicesGridBlockDoc
   | PayloadTestimonialsBlockDoc
-  | PayloadCaseStudiesBlockDoc;
+  | PayloadCaseStudiesBlockDoc
+  | PayloadStatisticsBlockDoc
+  | PayloadLogoCloudBlockDoc
+  | PayloadFeatureGridBlockDoc
+  | PayloadPricingBlockDoc
+  | PayloadProcessBlockDoc
+  | PayloadComparisonTableBlockDoc;
+
+// Phase 6B — pageType gains 4 new values (service/industry/location
+// landing pages + event); see PHASE6B-SEO-STRATEGY.md §3.
+export type PayloadPageType =
+  | "landing"
+  | "campaign"
+  | "seasonal"
+  | "service-landing"
+  | "industry-landing"
+  | "location-landing"
+  | "event";
 
 export interface PayloadPageDoc {
   id: number;
   title: string;
   slug: string;
-  pageType: "landing" | "campaign" | "seasonal";
+  pageType: PayloadPageType;
   seoTitle: string;
   seoDescription: string;
   // Phase 4C — see PHASE4C-SEO-PLAN.md §E.

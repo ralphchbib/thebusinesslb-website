@@ -9,6 +9,12 @@ import { FaqPageBlock } from "../blocks/FaqPageBlock";
 import { ServicesGridBlock } from "../blocks/ServicesGridBlock";
 import { TestimonialsBlock } from "../blocks/Testimonials";
 import { CaseStudiesBlock } from "../blocks/CaseStudies";
+import { StatisticsBlock } from "../blocks/Statistics";
+import { LogoCloudBlock } from "../blocks/LogoCloud";
+import { FeatureGridBlock } from "../blocks/FeatureGrid";
+import { PricingBlock } from "../blocks/Pricing";
+import { ProcessBlock } from "../blocks/Process";
+import { ComparisonTableBlock } from "../blocks/ComparisonTable";
 import { isReservedSlug } from "@/lib/cms/reserved-slugs";
 import { siteConfig } from "@/lib/config";
 
@@ -23,6 +29,14 @@ import { siteConfig } from "@/lib/config";
  * §2) — Rich Content here is a structured paragraph/heading/list array
  * instead, the same pattern Article bodies already use, not a real
  * richText field.
+ *
+ * Phase 6B ("Landing Page Factory") adds 6 more blocks (Statistics, Logo
+ * Cloud, Feature Grid, Pricing, Process, Comparison Table — see
+ * PHASE6B-BLOCK-GAP-ANALYSIS.md) plus 4 new `pageType` values so editors
+ * can categorize service/industry/location/event landing pages distinctly
+ * from the original landing/campaign/seasonal set — see
+ * PHASE6B-SEO-STRATEGY.md §3 for why this is an extension of the existing
+ * field rather than a new collection or a new field.
  */
 export const Pages: CollectionConfig = {
   slug: "pages",
@@ -95,10 +109,26 @@ export const Pages: CollectionConfig = {
       type: "select",
       required: true,
       defaultValue: "landing",
+      admin: {
+        description:
+          "Categorizes the page for SEO purposes (sitemap priority, structured data) — see " +
+          "PHASE6B-SEO-STRATEGY.md §3/§4. Service/Industry/Location landing pages automatically get " +
+          "Service structured data; Campaign/Seasonal pages default to hidden from search engines below.",
+      },
+      // Phase 6B — the original 3 values (landing/campaign/seasonal) are
+      // unchanged; the 4 new values let editors distinguish the Landing
+      // Page Factory's target categories without a new field or a new
+      // collection (see PHASE6B-SEO-STRATEGY.md §3 for why extending this
+      // field, not fragmenting into per-type collections, is the right
+      // design at this content volume).
       options: [
         { label: "Landing page", value: "landing" },
         { label: "Campaign page", value: "campaign" },
         { label: "Seasonal page", value: "seasonal" },
+        { label: "Service landing page", value: "service-landing" },
+        { label: "Industry landing page", value: "industry-landing" },
+        { label: "Location landing page", value: "location-landing" },
+        { label: "Event page", value: "event" },
       ],
     },
     { name: "seoTitle", type: "text", required: true, maxLength: 60 },
@@ -112,11 +142,40 @@ export const Pages: CollectionConfig = {
     {
       name: "noindex",
       type: "checkbox",
-      defaultValue: false,
+      // Phase 6B — deliberately NO static `defaultValue` here (unlike
+      // before). A live test proved Payload resolves a field's
+      // `defaultValue` into `data` BEFORE that field's own `beforeChange`
+      // hook runs — so a `defaultValue: false` alongside a hook checking
+      // `value === undefined` never actually fires the hook's branch
+      // (value is always already `false` by the time the hook sees it).
+      // The hook below is now the SOLE source of this field's default,
+      // for every operation — see PHASE6B-IMPLEMENTATION-REPORT.md for
+      // the full story, including the failed first attempt.
       admin: {
         description:
           "Hide this page from search engines (adds a noindex tag). Leave unchecked for normal pages — " +
-          "use this for temporary campaign or seasonal pages you don't want competing in search results.",
+          "use this for temporary campaign or seasonal pages you don't want competing in search results. " +
+          "Recommended ON for Campaign/Seasonal pages — see the Content Operations guide's pre-publish " +
+          "checklist. Automatically defaults to checked for Campaign/Seasonal pages created via the API " +
+          "(e.g. bulk-import tooling) that don't explicitly set this field; the admin form here always " +
+          "shows its own current value, since Payload field defaults can't react to another field's value " +
+          "without a custom UI component — not built for this phase, see PHASE6B-IMPLEMENTATION-REPORT.md.",
+      },
+      hooks: {
+        // Only the omitted-from-payload (`undefined`) case gets the
+        // pageType-based default — this only affects programmatic/API-
+        // driven page creation, not the interactive admin UI, which
+        // always submits every field's current value explicitly (see the
+        // admin.description above and PHASE6B-IMPLEMENTATION-REPORT.md).
+        beforeChange: [
+          ({ value, siblingData, operation }) => {
+            if (value !== undefined) return value;
+            if (operation === "create") {
+              return siblingData?.pageType === "campaign" || siblingData?.pageType === "seasonal";
+            }
+            return false;
+          },
+        ],
       },
     },
     {
@@ -132,6 +191,12 @@ export const Pages: CollectionConfig = {
         ServicesGridBlock,
         TestimonialsBlock,
         CaseStudiesBlock,
+        StatisticsBlock,
+        LogoCloudBlock,
+        FeatureGridBlock,
+        PricingBlock,
+        ProcessBlock,
+        ComparisonTableBlock,
       ],
     },
   ],
