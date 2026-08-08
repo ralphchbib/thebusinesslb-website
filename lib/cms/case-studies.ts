@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { getCms } from "./client";
+import { findAllSlugs } from "./pagination";
 import { getTestimonialsByIds, type Testimonial } from "./testimonials";
 import type { PayloadCaseStudyDoc, PayloadMediaDoc } from "./types";
 
@@ -116,16 +117,16 @@ export const getCaseStudyBySlug = cache(
   },
 );
 
+// Phase 6B — findAllSlugs() rather than a single capped find(); see
+// lib/cms/pagination.ts for why `limit: 100` was a real, reachable
+// ceiling, not a theoretical one, for sitemap/generateStaticParams feeds.
 export const getPublishedCaseStudySlugs = cache(async (): Promise<string[]> => {
   const payload = await getCms();
-  const result = await payload.find({
+  const docs = await findAllSlugs<Pick<PayloadCaseStudyDoc, "slug">>(payload, {
     collection: "case-studies",
     where: { _status: { equals: "published" } },
-    depth: 0,
-    limit: 100,
     select: { slug: true },
   });
-  const docs = result.docs as unknown as Pick<PayloadCaseStudyDoc, "slug">[];
   return docs.map((d) => d.slug);
 });
 
