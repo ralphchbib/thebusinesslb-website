@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { getCms } from "./client";
+import { findAllSlugs } from "./pagination";
 import { getFaqsByScope } from "./faqs";
 import type { ServiceContent } from "@/content/services/types";
 import type { PayloadServiceDoc, PayloadMediaDoc } from "./types";
@@ -97,17 +98,17 @@ export const getServicePriceMap = cache(async (): Promise<Record<string, string>
   return Object.fromEntries(docs.map((d) => [d.slug, d.priceAnchor]));
 });
 
+// Phase 6B — findAllSlugs() rather than a single capped find(); see
+// lib/cms/pagination.ts for why `limit: 100` was a real, reachable
+// ceiling, not a theoretical one, for sitemap/generateStaticParams feeds.
 export const getPublishedServiceSlugs = cache(async (): Promise<string[]> => {
   const payload = await getCms();
-  const result = await payload.find({
+  const docs = await findAllSlugs<Pick<PayloadServiceDoc, "slug">>(payload, {
     collection: "services",
     where: { _status: { equals: "published" } },
     sort: "order",
-    depth: 0,
-    limit: 100,
     select: { slug: true },
   });
-  const docs = result.docs as unknown as Pick<PayloadServiceDoc, "slug">[];
   return docs.map((d) => d.slug);
 });
 

@@ -5,10 +5,18 @@ import { isReservedSlug } from "@/lib/cms/reserved-slugs";
 import { getSiteSettings } from "@/lib/cms/site-settings";
 import { getFaqsByIds } from "@/lib/cms/faqs";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { breadcrumbSchema, faqSchema } from "@/lib/seo/schema-org";
+import { breadcrumbSchema, faqSchema, serviceSchema, offerSchema } from "@/lib/seo/schema-org";
 import { isPreviewMode, PREVIEW_ROBOTS } from "@/lib/seo/preview";
 import { BlockRenderer } from "@/components/blocks/page/block-renderer";
-import type { PayloadFaqPageBlockDoc } from "@/lib/cms/types";
+import type { PayloadFaqPageBlockDoc, PayloadPricingBlockDoc, PayloadPageType } from "@/lib/cms/types";
+
+// Phase 6B — pageTypes that represent a specific service/industry/location
+// offering get Service structured data; see PHASE6B-SEO-STRATEGY.md §4.
+const SERVICE_SCHEMA_PAGE_TYPES: PayloadPageType[] = [
+  "service-landing",
+  "industry-landing",
+  "location-landing",
+];
 
 /**
  * Phase 2 foundation route for CMS-managed landing/campaign/seasonal
@@ -81,10 +89,35 @@ export default async function CmsPage({ params }: { params: Promise<{ slug: stri
     .flatMap((b) => (b.faqs ?? []).map((f) => (typeof f === "object" ? f.id : f)));
   const faqs = faqBlockIds.length > 0 ? await getFaqsByIds(faqBlockIds) : [];
 
-  const jsonLd = [
-    breadcrumbSchema([{ name: page.title, path: `/${page.slug}/` }]),
+  // Phase 6B — service/industry/location landing pages get Service
+  // structured data (see PHASE6B-SEO-STRATEGY.md §4): serviceSchema() was
+  // already built and proven on /services/[slug]/ but never wired into
+  // Pages before this. Uses the page's own title/seoDescription — there's
+  // no separate "service name" field on Pages, unlike the Services
+  // collection.
+  const path = `/${page.slug}/`;
+  const jsonLd: object[] = [
+    breadcrumbSchema([{ name: page.title, path }]),
     ...(faqs.length > 0 ? [faqSchema(faqs)] : []),
+    ...(SERVICE_SCHEMA_PAGE_TYPES.includes(page.pageType)
+      ? [serviceSchema({ name: page.title, description: page.seoDescription, path })]
+      : []),
   ];
+
+  // Phase 6B — Offer/Product schema for any Pricing block tier that has a
+  // clean numeric priceValueUSD set (see payload/blocks/Pricing.ts for why
+  // tiers without one — "From $X", "Custom quote" — are skipped rather
+  // than guessing a number).
+  const pricingTiers = (page.blocks ?? [])
+    .filter((b): b is PayloadPricingBlockDoc => b.blockType === "pricing")
+    .flatMap((b) => b.tiers ?? []);
+  for (const tier of pricingTiers) {
+    if (typeof tier.priceValueUSD === "number") {
+      jsonLd.push(
+        offerSchema({ name: tier.name, description: tier.summary ?? undefined, price: tier.priceValueUSD, path }),
+      );
+    }
+  }
 
   return (
     <>

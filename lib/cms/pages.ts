@@ -1,11 +1,16 @@
 import { cache } from "react";
 import { getCms } from "./client";
-import type { PayloadPageDoc, PayloadMediaDoc } from "./types";
+import { findAllSlugs } from "./pagination";
+import type { PayloadPageDoc, PayloadPageType, PayloadMediaDoc } from "./types";
 import { isReservedSlug } from "./reserved-slugs";
 
 export interface PageData {
   title: string;
   slug: string;
+  // Phase 6B — exposed so the route can conditionally emit Service
+  // structured data for service/industry/location landing pages. See
+  // PHASE6B-SEO-STRATEGY.md §4.
+  pageType: PayloadPageType;
   seoTitle: string;
   seoDescription: string;
   ogImage?: string;
@@ -23,6 +28,7 @@ function toPageData(doc: PayloadPageDoc): PageData {
   return {
     title: doc.title,
     slug: doc.slug,
+    pageType: doc.pageType,
     seoTitle: doc.seoTitle,
     seoDescription: doc.seoDescription,
     ogImage: resolveMediaUrl(doc.ogImage),
@@ -95,17 +101,19 @@ export const getPageBySlug = cache(
  * quietly paper over. The filter below is a second, independent layer
  * in case this assertion is ever weakened or removed without someone
  * noticing what it was protecting.
+ *
+ * Phase 6B — uses findAllSlugs() rather than a single capped find() call;
+ * see lib/cms/pagination.ts for why the previous `limit: 100` was a real,
+ * reachable ceiling for a collection editors are expected to publish to at
+ * volume.
  */
 export const getPublishedPageSlugs = cache(async (): Promise<string[]> => {
   const payload = await getCms();
-  const result = await payload.find({
+  const docs = await findAllSlugs<Pick<PayloadPageDoc, "slug">>(payload, {
     collection: "pages",
     where: { _status: { equals: "published" } },
-    depth: 0,
-    limit: 100,
     select: { slug: true },
   });
-  const docs = result.docs as unknown as Pick<PayloadPageDoc, "slug">[];
   const slugs = docs.map((d) => d.slug);
 
   const collisions = slugs.filter(isReservedSlug);
@@ -119,3 +127,24 @@ export const getPublishedPageSlugs = cache(async (): Promise<string[]> => {
 
   return slugs.filter((slug) => !isReservedSlug(slug));
 });
+
+/**
+ * Phase 6B — feeds sitemap.ts's per-pageType priority/changeFrequency
+ * (see PHASE6B-SEO-STRATEGY.md §3): a sibling of getPublishedPageSlugs()
+ * that also selects `pageType`, since the sitemap needs to differentiate
+ * a "service-landing" page's priority from a "campaign" page's. Applies
+ * the identical reserved-slug filtering (not the hard-fail — that
+ * assertion already runs via getPublishedPageSlugs() in the same
+ * sitemap() call, no need to duplicate the throw).
+ */
+export const getPublishedPagesForSitemap = cache(
+  async (): Promise<{ slug: string; pageType: PayloadPageType }[]> => {
+    const payload = await getCms();
+    const docs = await findAllSlugs<Pick<PayloadPageDoc, "slug" | "pageType">>(payload, {
+      collection: "pages",
+      where: { _status: { equals: "published" } },
+      select: { slug: true, pageType: true },
+    });
+    return docs.filter((d) => !isReservedSlug(d.slug));
+  },
+);

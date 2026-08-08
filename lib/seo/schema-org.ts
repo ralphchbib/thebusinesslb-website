@@ -74,6 +74,7 @@ export function serviceSchema(params: {
   name: string;
   description: string;
   path: string;
+  areaServed?: string;
 }) {
   return {
     "@context": "https://schema.org",
@@ -83,7 +84,36 @@ export function serviceSchema(params: {
     description: params.description,
     url: `${siteConfig.url}${params.path}`,
     provider: { "@type": "ProfessionalService", name: siteConfig.name },
-    areaServed: { "@type": "Country", name: "Lebanon" },
+    areaServed: { "@type": "Country", name: params.areaServed || "Lebanon" },
+  };
+}
+
+/**
+ * Phase 6B — direct copy of serviceSchema()'s pattern, for the new
+ * Pricing block (payload/blocks/Pricing.ts). One Offer per tier; a Page
+ * with multiple Pricing blocks emits one AggregateOffer-free flat list —
+ * matches how Google's structured-data docs treat a page listing several
+ * priced tiers of one thing, not several distinct products. See
+ * PHASE6B-SEO-STRATEGY.md §4.
+ */
+export function offerSchema(params: {
+  name: string;
+  description?: string;
+  price: number;
+  path: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: params.name,
+    ...(params.description ? { description: params.description } : {}),
+    offers: {
+      "@type": "Offer",
+      price: params.price,
+      priceCurrency: "USD",
+      url: `${siteConfig.url}${params.path}`,
+      seller: { "@type": "ProfessionalService", name: siteConfig.name },
+    },
   };
 }
 
