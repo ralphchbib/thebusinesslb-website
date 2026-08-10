@@ -95,3 +95,33 @@ export const newsletterSchema = z.object({
   email: z.string().trim().email("That email address doesn't look right."),
 });
 export type NewsletterInput = z.infer<typeof newsletterSchema>;
+
+export const timelineOptions = [
+  { value: "asap", label: "ASAP" },
+  { value: "1-3-months", label: "1–3 months" },
+  { value: "3-6-months", label: "3–6 months" },
+  { value: "just-exploring", label: "Just exploring" },
+] as const;
+export const timelineValues = timelineOptions.map((o) => o.value) as [string, ...string[]];
+
+/**
+ * Phase 7 — modeled directly on contactSchema's shape (a quote request is
+ * "contact, but with project-scoping detail"), reusing serviceInterestOptions
+ * and budgetOptions rather than inventing new taxonomies. See
+ * PHASE7-FORMS-STRATEGY.md §2.3 for why this is deliberately single-step
+ * and narrower than the Assessment form's full qualification depth.
+ */
+export const quoteSchema = z.object({
+  fullName: z.string().trim().min(2, "Add your full name."),
+  businessName: z.string().trim().optional().default(""),
+  email: z.string().trim().email("That email address doesn't look right."),
+  whatsapp: z.string().trim().optional().default(""),
+  interest: z.enum(serviceValues, { message: "Choose what you're interested in." }),
+  projectDescription: z
+    .string()
+    .trim()
+    .min(20, "Give us a bit more detail so we can actually quote this."),
+  budget: z.enum(budgetValues, { message: "Choose a budget range." }),
+  timeline: z.enum(timelineValues, { message: "Choose a rough timeline." }),
+});
+export type QuoteInput = z.infer<typeof quoteSchema>;

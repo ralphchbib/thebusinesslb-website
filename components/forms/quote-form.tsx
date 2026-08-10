@@ -3,27 +3,27 @@
 import * as React from "react";
 import { useActionState } from "react";
 import { usePathname } from "next/navigation";
-import { submitContactAction, type FormState } from "@/lib/actions";
+import { submitQuoteAction, type FormState } from "@/lib/actions";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { FormField } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/button";
-import { serviceInterestOptions } from "@/lib/validation/schemas";
-import { contact } from "@/content/contact";
+import { serviceInterestOptions, budgetOptions, timelineOptions } from "@/lib/validation/schemas";
+import { quote } from "@/content/quote";
 
 const initialState: FormState = { status: "idle" };
 
-export function ContactForm() {
-  const [state, formAction, pending] = useActionState(submitContactAction, initialState);
+export function QuoteForm() {
+  const [state, formAction, pending] = useActionState(submitQuoteAction, initialState);
   const pathname = usePathname();
+  const [startedAt] = React.useState(() => Date.now());
 
-  // Phase 7 attribution capture — see PHASE7-ARCHITECTURE-REVIEW.md §1.3:
-  // only landing_path was ever wired up before this phase, even though
-  // utm_source/utm_medium/utm_campaign/referrer_url have been read by
-  // lib/actions.ts's readAttribution() and stored in the database this
-  // whole time. Read once on mount (both are browser-only values; reading
-  // them at render time would mismatch SSR).
+  // Phase 7 attribution capture — reads UTM params + referrer once on
+  // mount (both are browser-only; reading them at render time would
+  // mismatch SSR). See PHASE7-ARCHITECTURE-REVIEW.md §1.3 for why this was
+  // missing on every existing form before this phase — only landing_path
+  // was ever wired up.
   const [attribution, setAttribution] = React.useState({
     utmSource: "",
     utmMedium: "",
@@ -43,6 +43,7 @@ export function ContactForm() {
   return (
     <form action={formAction} className="flex flex-col gap-5">
       <input type="hidden" name="landing_path" value={pathname || ""} />
+      <input type="hidden" name="form_started_at" value={startedAt} />
       <input type="hidden" name="utm_source" value={attribution.utmSource} />
       <input type="hidden" name="utm_medium" value={attribution.utmMedium} />
       <input type="hidden" name="utm_campaign" value={attribution.utmCampaign} />
@@ -74,7 +75,7 @@ export function ContactForm() {
         </FormField>
       </div>
 
-      <FormField label="What are you interested in?" htmlFor="interest" error={state.fieldErrors?.interest}>
+      <FormField label="What do you need a quote for?" htmlFor="interest" error={state.fieldErrors?.interest}>
         <Select id="interest" name="interest" required defaultValue="">
           <option value="" disabled>
             Choose one
@@ -88,21 +89,49 @@ export function ContactForm() {
       </FormField>
 
       <FormField
-        label="Tell us about your business and what you're trying to solve"
-        htmlFor="message"
-        error={state.fieldErrors?.message}
+        label="Describe the project"
+        htmlFor="projectDescription"
+        error={state.fieldErrors?.projectDescription}
+        helper="Enough detail to actually price it — what you need, for whom, and any must-haves."
       >
-        <Textarea id="message" name="message" required hasError={!!state.fieldErrors?.message} />
+        <Textarea id="projectDescription" name="projectDescription" required hasError={!!state.fieldErrors?.projectDescription} />
       </FormField>
+
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <FormField label="Budget range" htmlFor="budget" error={state.fieldErrors?.budget}>
+          <Select id="budget" name="budget" required defaultValue="">
+            <option value="" disabled>
+              Choose one
+            </option>
+            {budgetOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </Select>
+        </FormField>
+        <FormField label="Timeline" htmlFor="timeline" error={state.fieldErrors?.timeline}>
+          <Select id="timeline" name="timeline" required defaultValue="">
+            <option value="" disabled>
+              Choose one
+            </option>
+            {timelineOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </Select>
+        </FormField>
+      </div>
 
       {state.status === "error" && !state.fieldErrors && (
         <p className="text-[13px] text-error">{state.message}</p>
       )}
 
       <Button type="submit" size="lg" disabled={pending} className="w-full sm:w-auto">
-        {pending ? "Sending…" : "Send my message"}
+        {pending ? "Sending…" : quote.form.submit}
       </Button>
-      <p className="text-[13px] text-n500">{contact.form.micro}</p>
+      <p className="text-[13px] text-n500">{quote.form.micro}</p>
     </form>
   );
 }

@@ -25,6 +25,25 @@ export function NewsletterForm({
 }) {
   const [state, formAction, pending] = useActionState(subscribeNewsletterAction, initialState);
   const pathname = usePathname();
+
+  // Phase 7 attribution capture — see PHASE7-ARCHITECTURE-REVIEW.md §1.3:
+  // only landing_path was ever wired up before this phase.
+  const [attribution, setAttribution] = React.useState({
+    utmSource: "",
+    utmMedium: "",
+    utmCampaign: "",
+    referrerUrl: "",
+  });
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setAttribution({
+      utmSource: params.get("utm_source") || "",
+      utmMedium: params.get("utm_medium") || "",
+      utmCampaign: params.get("utm_campaign") || "",
+      referrerUrl: document.referrer || "",
+    });
+  }, []);
+
   const newsletter = {
     heading: heading ?? newsletterDefaults.heading,
     sub: sub ?? newsletterDefaults.sub,
@@ -42,6 +61,20 @@ export function NewsletterForm({
   return (
     <form action={formAction} className="w-full">
       <input type="hidden" name="landing_path" value={pathname || ""} />
+      <input type="hidden" name="utm_source" value={attribution.utmSource} />
+      <input type="hidden" name="utm_medium" value={attribution.utmMedium} />
+      <input type="hidden" name="utm_campaign" value={attribution.utmCampaign} />
+      <input type="hidden" name="referrer_url" value={attribution.referrerUrl} />
+      {/* Phase 7 — honeypot added; this form previously had none, unlike
+          Contact/Assessment. See PHASE7-ARCHITECTURE-REVIEW.md §1.4. */}
+      <input
+        type="text"
+        name="company_website"
+        tabIndex={-1}
+        autoComplete="off"
+        className="hidden"
+        aria-hidden="true"
+      />
       <p className={dark ? "mb-1 text-[15px] font-semibold text-white" : "mb-1 text-[15px] font-semibold text-ink"}>
         {newsletter.heading}
       </p>

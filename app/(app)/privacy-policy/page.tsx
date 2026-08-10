@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { Breadcrumb } from "@/components/blocks/breadcrumb";
 import { Section } from "@/components/blocks/section";
+import Link from "next/link";
 import { siteConfig } from "@/lib/config";
 
 export const metadata: Metadata = buildMetadata({
@@ -36,7 +37,14 @@ export default function PrivacyPolicyPage() {
           <p>We use what you submit to reply to you, to prepare for a call, and — if you apply for the Digital Business Assessment — to write your roadmap. Newsletter subscribers receive the emails they signed up for and nothing else. We store submissions to keep a record of our conversation with you; we do not use it for any purpose beyond running this business and delivering the assessment, project or reply you asked for.</p>
 
           <h2 className="font-display mt-4 text-2xl font-medium text-ink">Consent and marketing</h2>
-          <p>We only contact you about an assessment application or message if you&rsquo;ve ticked the consent box that says so. Newsletter subscriptions use double opt-in — you&rsquo;ll receive one confirmation email before anything else arrives, and you can unsubscribe from any newsletter email at any time.</p>
+          <p>
+            We only contact you about an assessment application or message if you&rsquo;ve ticked the consent box
+            that says so. You can unsubscribe from newsletter emails at any time —{" "}
+            <Link href="/unsubscribe/" className="font-semibold text-petrol underline">
+              use this page
+            </Link>{" "}
+            and we&rsquo;ll stop.
+          </p>
 
           <h2 className="font-display mt-4 text-2xl font-medium text-ink">How we protect it</h2>
           <p>Submitted information is stored securely and access is limited to the people who need it to do the work — in practice, that&rsquo;s Ralph. IP addresses used for basic spam protection are hashed before storage; we never store them in plain text. Assessment answers are treated as commercially sensitive and are never exposed through any public part of the site.</p>
