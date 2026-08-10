@@ -7,9 +7,10 @@ import { WhatsAppLink } from "@/components/whatsapp-link";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { thankYouAssessment } from "@/content/assessment";
 import { thankYouContact, thankYouSubscribe } from "@/content/contact";
+import { thankYouQuote } from "@/content/quote";
 import { getRecentArticles } from "@/lib/cms/articles";
 
-const VALID_TYPES = ["assessment", "contact", "subscribe"] as const;
+const VALID_TYPES = ["assessment", "contact", "quote", "subscribe"] as const;
 type ThankYouType = (typeof VALID_TYPES)[number];
 
 export function generateStaticParams() {
@@ -103,6 +104,20 @@ export default async function ThankYouPage({
         <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-n600">{thankYouContact.lead}</p>
         <Button asChild size="lg" className="mt-8">
           <Link href="/insights/">Read our latest thinking</Link>
+        </Button>
+      </Section>
+    );
+  }
+
+  if (type === "quote") {
+    return (
+      <Section surface="white" className="text-center">
+        <h1 className="font-display text-[32px] font-medium tracking-[-0.02em] text-ink md:text-[44px]">
+          {thankYouQuote.h1}
+        </h1>
+        <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-n600">{thankYouQuote.lead}</p>
+        <Button asChild size="lg" className="mt-8">
+          <Link href="/services/">See what we do</Link>
         </Button>
       </Section>
     );

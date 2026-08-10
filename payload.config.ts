@@ -15,6 +15,9 @@ import { Pages } from "@/payload/collections/Pages";
 import { Testimonials } from "@/payload/collections/Testimonials";
 import { CaseStudies } from "@/payload/collections/CaseStudies";
 import { Media } from "@/payload/collections/Media";
+import { Leads } from "@/payload/collections/Leads";
+import { NewsletterSubscribers } from "@/payload/collections/NewsletterSubscribers";
+import { RateLimitEvents } from "@/payload/collections/RateLimitEvents";
 import { SiteSettings } from "@/payload/globals/SiteSettings";
 import { Homepage } from "@/payload/globals/Homepage";
 import { siteConfig } from "@/lib/config";
@@ -68,7 +71,20 @@ export default buildConfig({
   admin: {
     user: Users.slug,
   },
-  collections: [Users, Services, Articles, FAQs, Navigation, Pages, Testimonials, CaseStudies, Media],
+  collections: [
+    Users,
+    Services,
+    Articles,
+    FAQs,
+    Navigation,
+    Pages,
+    Testimonials,
+    CaseStudies,
+    Media,
+    Leads,
+    NewsletterSubscribers,
+    RateLimitEvents,
+  ],
   globals: [SiteSettings, Homepage],
   sharp,
   graphQL: {
@@ -104,9 +120,16 @@ export default buildConfig({
     pool: {
       connectionString: process.env.DATABASE_URL || "",
     },
-    // Isolated from the existing lead-capture schema (public) — additive
-    // only, nothing here can touch assessment_applications / contact_
-    // submissions / newsletter_subscribers.
+    // Originally isolated from the old Drizzle-based lead-capture schema
+    // (public) so nothing here could touch assessment_applications/
+    // contact_submissions/newsletter_subscribers. Phase 7 deliberately
+    // supersedes that separation: lead storage now lives here too (Leads,
+    // NewsletterSubscribers, RateLimitEvents), so staff manage every kind
+    // of content — including leads — through the one admin UI already
+    // proven across every other collection. See
+    // PHASE7-CRM-ARCHITECTURE.md §3–5 for the full evaluation. The old
+    // `public`-schema tables are left in place, unused, until a later
+    // phase's cleanup confirms the migration is stable in production.
     schemaName: "cms",
   }),
   // Reuses the same Resend account as the lead-capture forms

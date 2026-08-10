@@ -37,6 +37,15 @@ export function AssessmentForm() {
   const [startedAt] = React.useState(() => Date.now());
   const trackedStart = React.useRef(false);
 
+  // Phase 7 attribution capture — see PHASE7-ARCHITECTURE-REVIEW.md §1.3:
+  // only landing_path was ever wired up before this phase.
+  const [attribution, setAttribution] = React.useState({
+    utmSource: "",
+    utmMedium: "",
+    utmCampaign: "",
+    referrerUrl: "",
+  });
+
   React.useEffect(() => {
     setEnhanced(true);
     try {
@@ -45,6 +54,13 @@ export function AssessmentForm() {
     } catch {
       /* ignore */
     }
+    const params = new URLSearchParams(window.location.search);
+    setAttribution({
+      utmSource: params.get("utm_source") || "",
+      utmMedium: params.get("utm_medium") || "",
+      utmCampaign: params.get("utm_campaign") || "",
+      referrerUrl: document.referrer || "",
+    });
   }, []);
 
   function persist(name: string, value: string) {
@@ -92,6 +108,10 @@ export function AssessmentForm() {
     <form ref={formRef} action={formAction} className="flex flex-col gap-6">
       <input type="hidden" name="landing_path" value={pathname || ""} />
       <input type="hidden" name="form_started_at" value={startedAt} />
+      <input type="hidden" name="utm_source" value={attribution.utmSource} />
+      <input type="hidden" name="utm_medium" value={attribution.utmMedium} />
+      <input type="hidden" name="utm_campaign" value={attribution.utmCampaign} />
+      <input type="hidden" name="referrer_url" value={attribution.referrerUrl} />
       <input
         type="text"
         name="company_website"

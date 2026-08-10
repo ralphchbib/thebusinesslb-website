@@ -37,6 +37,10 @@ export const RESERVED_SLUGS = new Set([
   // entry — nested dynamic segments can't collide with the top-level
   // [slug] catch-all, same as /services/[slug]/ and /insights/[slug]/.
   "case-studies",
+  // Added for Phase 7 (app/(app)/quote/page.tsx — the new Quote Request
+  // form route) and app/(app)/unsubscribe/page.tsx.
+  "quote",
+  "unsubscribe",
 ]);
 
 export function isReservedSlug(slug: string): boolean {
