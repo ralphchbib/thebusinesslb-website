@@ -218,6 +218,7 @@ export function AssessmentForm() {
             defaultValue={draft.biggestBlocker}
             onChange={(e) => persist("biggestBlocker", e.target.value)}
             hasError={!!state.fieldErrors?.biggestBlocker}
+            data-clarity-mask="true"
           />
         </FormField>
         <FormField label="What would you like to be true in 90 days?" htmlFor="ninetyDayGoal" optional>

@@ -1,6 +1,5 @@
-import Link from "next/link";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
+import { TrackedCta } from "@/components/analytics/tracked-cta";
 import type { PayloadHeroBlockDoc } from "@/lib/cms/types";
 
 /**
@@ -68,14 +67,20 @@ export function PageHeroBlock({
         {(ctaPrimaryLabel || ctaSecondaryLabel) && (
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             {ctaPrimaryLabel && ctaPrimaryHref && (
-              <Button asChild size="lg">
-                <Link href={ctaPrimaryHref}>{ctaPrimaryLabel}</Link>
-              </Button>
+              <TrackedCta href={ctaPrimaryHref} ctaId="hero_primary" ctaLocation="page_builder_hero" size="lg">
+                {ctaPrimaryLabel}
+              </TrackedCta>
             )}
             {ctaSecondaryLabel && ctaSecondaryHref && (
-              <Button asChild variant="secondary" size="lg">
-                <Link href={ctaSecondaryHref}>{ctaSecondaryLabel}</Link>
-              </Button>
+              <TrackedCta
+                href={ctaSecondaryHref}
+                ctaId="hero_secondary"
+                ctaLocation="page_builder_hero"
+                variant="secondary"
+                size="lg"
+              >
+                {ctaSecondaryLabel}
+              </TrackedCta>
             )}
           </div>
         )}

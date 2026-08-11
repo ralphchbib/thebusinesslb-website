@@ -7,6 +7,10 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
 import { PreviewBanner } from "@/components/preview-banner";
+import { ConsentBanner } from "@/components/consent-banner";
+import { GA4Script } from "@/components/analytics/ga4-script";
+import { ClarityScript } from "@/components/analytics/clarity-script";
+import { ScrollDepthTracker } from "@/components/analytics/scroll-depth-tracker";
 import { siteConfig } from "@/lib/config";
 import { organizationSchema } from "@/lib/seo/schema-org";
 import { getNavItems } from "@/lib/cms/navigation";
@@ -46,6 +50,9 @@ export const metadata: Metadata = {
     icon: "/monogram.svg",
     apple: "/icon-192.png",
   },
+  verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
+    : undefined,
 };
 
 export default async function RootLayout({
@@ -97,6 +104,12 @@ export default async function RootLayout({
         </main>
         <Footer />
         <StickyActionBar servicePrices={servicePrices} />
+        <ConsentBanner />
+        <ScrollDepthTracker />
+        {process.env.NEXT_PUBLIC_GA4_ID && <GA4Script gaId={process.env.NEXT_PUBLIC_GA4_ID} />}
+        {process.env.NEXT_PUBLIC_CLARITY_ID && (
+          <ClarityScript clarityId={process.env.NEXT_PUBLIC_CLARITY_ID} />
+        )}
         <Analytics />
         <SpeedInsights />
       </body>

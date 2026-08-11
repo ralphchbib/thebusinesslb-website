@@ -99,8 +99,10 @@ repo is created and you're ready, per your instruction.
    | `NEXT_PUBLIC_SITE_URL` | `https://thebusinesslb.com` |
    | `NEXT_PUBLIC_WHATSAPP_NUMBER` | `96176126860` |
    | `IP_HASH_SALT` | `e64b40f7c436c65fb4c4573eb09436f42e800cee9708f421562b5b325612e52a` (already generated) or your own via `openssl rand -hex 32` |
-   | `NEXT_PUBLIC_GA4_ID` | leave blank for now |
+   | `NEXT_PUBLIC_GA4_ID` | optional — GA4 measurement ID (`G-XXXXXXXXXX`); leave blank to skip loading GA4 |
+   | `NEXT_PUBLIC_CLARITY_ID` | optional — Microsoft Clarity project ID; leave blank to skip loading Clarity |
    | `NEXT_PUBLIC_META_PIXEL_ID` | leave blank for now |
+   | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | optional — Search Console HTML-tag verification token; leave blank if verifying via DNS instead |
    | `CALENDAR_BOOKING_URL` | leave blank for now |
 
 4. Click **Deploy**. Build takes ~1–2 minutes. This will succeed even before
