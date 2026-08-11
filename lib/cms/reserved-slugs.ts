@@ -41,6 +41,15 @@ export const RESERVED_SLUGS = new Set([
   // form route) and app/(app)/unsubscribe/page.tsx.
   "quote",
   "unsubscribe",
+  // Added for Phase 9A — the new (network) and (dashboard) route groups'
+  // top-level segments. See PHASE9A-TECHNICAL-DESIGN.md §C.
+  "network",
+  "register",
+  "login",
+  "dashboard",
+  "verify-email",
+  "forgot-password",
+  "reset-password",
 ]);
 
 export function isReservedSlug(slug: string): boolean {

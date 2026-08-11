@@ -13,7 +13,10 @@ import { saveAssessmentLead, saveContactLead, saveQuoteLead } from "@/lib/cms/le
 import { saveNewsletterSubscriber, unsubscribeNewsletter } from "@/lib/cms/newsletter";
 import { checkAndRecordThrottle } from "@/lib/cms/rate-limit";
 
-async function checkThrottle(kind: string) {
+// Exported for reuse by lib/network/actions.ts (Phase 9A) — the exact
+// same IP-hash + persistent-throttle pattern, applied to registration/
+// login/forgot-password instead of the marketing forms.
+export async function checkThrottle(kind: string) {
   const salt = process.env.IP_HASH_SALT || "dev-salt";
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for") ?? hdrs.get("x-real-ip") ?? "unknown";
