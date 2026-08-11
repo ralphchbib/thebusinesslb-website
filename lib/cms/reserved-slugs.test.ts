@@ -47,6 +47,13 @@ test("every route under app/(app)/* (or the (payload) group) that a [slug] catch
     "case-studies",
     "quote",
     "unsubscribe",
+    "network",
+    "register",
+    "login",
+    "dashboard",
+    "verify-email",
+    "forgot-password",
+    "reset-password",
   ];
   for (const slug of expected) {
     assert.ok(RESERVED_SLUGS.has(slug), `RESERVED_SLUGS is missing "${slug}"`);

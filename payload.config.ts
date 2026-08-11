@@ -18,6 +18,7 @@ import { Media } from "@/payload/collections/Media";
 import { Leads } from "@/payload/collections/Leads";
 import { NewsletterSubscribers } from "@/payload/collections/NewsletterSubscribers";
 import { RateLimitEvents } from "@/payload/collections/RateLimitEvents";
+import { NetworkAccounts } from "@/payload/collections/NetworkAccounts";
 import { SiteSettings } from "@/payload/globals/SiteSettings";
 import { Homepage } from "@/payload/globals/Homepage";
 import { siteConfig } from "@/lib/config";
@@ -84,6 +85,7 @@ export default buildConfig({
     Leads,
     NewsletterSubscribers,
     RateLimitEvents,
+    NetworkAccounts,
   ],
   globals: [SiteSettings, Homepage],
   sharp,
