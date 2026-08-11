@@ -8,6 +8,8 @@ Branch: `feat/phase9a-authentication` (off `main` @ `4740c68`, includes Phase 8)
 
 `auth: true`, `admin.hidden: true` (never appears in or authenticates into `/admin` — the actual security boundary is `payload.config.ts`'s unchanged `admin.user: Users.slug`, not the hidden flag, per the design doc). Fields: `name`, `accountType` (business/professional/consumer/institution/diaspora, staff-only to change after creation), `diasporaCountry` (conditional), `status` (active/suspended, staff-only, enforced via a `beforeLogin` hook that throws for suspended accounts). Custom `verify`/`forgotPassword` email templates linking to this app's own `/verify-email` and `/reset-password` pages rather than Payload's default link shape.
 
+**Disclosed deviation from `PHASE9A-TECHNICAL-DESIGN.md` §B**: the design doc specifies `create: anyone` for this collection's access control; the shipped code uses a stricter `staffOnlyCreate` instead (`payload/access-network.ts`), blocking direct unauthenticated REST self-registration in favor of registration going exclusively through the honeypot/throttle-protected `registerAction` Server Action (which uses the Local API's `overrideAccess: true` default and is unaffected by this restriction). This is a tightening, not a weakening, and was flagged as an undisclosed gap by the independent release review — disclosed here per that finding.
+
 ### 1.2 Session layer (`lib/network/session.ts`) — the corrected architecture from the design doc
 
 Implements `PHASE9A-TECHNICAL-DESIGN.md` §A.1 exactly: a distinctly-named `network-token` cookie (httpOnly, secure in production, `sameSite: lax`), set/cleared only by this app's own Server Actions (never Payload's auto-generated REST auth endpoints), and validated server-side by reading the cookie and passing it to Payload's Local API `auth()` operation via an `Authorization: Bearer` header — using Payload's own built-in Bearer-extraction path (`jwtOrder` default), not a workaround outside its design.
@@ -37,7 +39,15 @@ Beyond the cookie-collision correction already made at the design stage (§A.1 o
 
 Neither issue reflects a defect in the Phase 9A code itself — both are artifacts of the specific sequence of local commands run during validation, disclosed here for transparency rather than treated as if they hadn't happened.
 
-## 3. Standard checks (run from a clean state)
+## 2.5. Remediation: REST auth endpoint cookie collision (post-review fix)
+
+The independent release review ([PHASE9A-RELEASE-REVIEW.md](PHASE9A-RELEASE-REVIEW.md)) found that §A.1's fix — a distinct `network-token` cookie plus a Bearer-header bridge — only protected this app's own Server Actions. Payload still auto-generates full REST endpoints for every `auth: true` collection regardless of whether the app calls them, and nothing in the original `NetworkAccounts.ts` disabled them. The review confirmed live that `POST /api/network-accounts/login` (and by the same mechanism `logout`/`refresh-token`/`forgot-password`/`reset-password`) set the exact same `payload-token` cookie the admin `users` collection's login sets — reproducing, via a standard and discoverable Payload REST path, the collision the whole session architecture exists to avoid. The same unguarded `forgot-password` endpoint also bypassed the app's own throttle protection entirely (throttle only runs inside the Server Action, not the collection).
+
+**Fix** (`payload/collections/NetworkAccounts.ts`): those five endpoints are now shadowed with a blocking handler at the identical `{method, path}`. Payload's route resolver (`handleEndpoints`) returns the first array match, and a collection's own `endpoints` entries are placed before its auto-generated auth endpoints in the merged array (`collections/config/sanitize.js`) — so the shadow wins, and the request never reaches Payload's real login/logout/refresh/forgot-password/reset-password handlers. Calling any of the five now returns `404 Not found`. `verify` is deliberately left alone (never sets a cookie, was never part of the collision surface, and the app calls it via the Local API anyway, not REST). This required no change to `access` config, session logic, or any Local-API-driven flow — Local API calls (`payload.login()`, etc., used throughout `lib/network/actions.ts`) bypass Payload's REST routing entirely and are unaffected by this change.
+
+**Verified independently** in [PHASE9A-SECOND-RELEASE-REVIEW.md](PHASE9A-SECOND-RELEASE-REVIEW.md): all five endpoints confirmed blocked live (no `Set-Cookie` header at all from the former login collision point); `verify` and the admin `users` login confirmed unaffected; every app-driven flow (registration → verification → login → dashboard → settings → logout → forgot-password → reset-password) re-run end-to-end in a real browser and confirmed working exactly as before; throttle protection driven to its limit through the real UI and confirmed blocking the 4th attempt, with no REST path left to route around it.
+
+## 3. Standard checks (run from a clean state, re-confirmed after remediation)
 
 - `tsc --noEmit` — **0 errors**
 - `next lint` — **0 errors**
@@ -48,7 +58,7 @@ Neither issue reflects a defect in the Phase 9A code itself — both are artifac
 
 | File | Change |
 |---|---|
-| `payload/collections/NetworkAccounts.ts` | New — the auth collection |
+| `payload/collections/NetworkAccounts.ts` | New — the auth collection; later amended (§2.5) to shadow 5 REST auth endpoints |
 | `payload/access-network.ts` | New — ownership-based access helpers, mirroring `payload/access.ts`'s shape |
 | `payload.config.ts` | `+NetworkAccounts` registration (additive only — confirmed via diff that `Users.ts`/`payload/access.ts` are completely untouched) |
 | `lib/network/session.ts` | New — cookie + Bearer-bridge session layer |

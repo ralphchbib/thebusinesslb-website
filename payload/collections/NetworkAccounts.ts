@@ -1,4 +1,4 @@
-import type { CollectionConfig } from "payload";
+import type { CollectionConfig, Endpoint, PayloadHandler } from "payload";
 import { adminOnly } from "../access";
 import { ownAccountOrStaff, staffOnlyCreate, staffOnlyField } from "../access-network";
 import { siteConfig } from "@/lib/config";
@@ -18,12 +18,43 @@ import { siteConfig } from "@/lib/config";
  * is a single global `cookiePrefix` value (verified against the installed
  * package source), so a second auth collection using the auto-generated
  * REST login would silently share — and overwrite — the `users` admin
- * cookie. Verification (`/verify/:token`) is the one auth operation safe
- * to leave on the standard REST endpoint, since it never sets a cookie.
+ * cookie.
+ *
+ * §A.1's fix (a distinct `network-token` cookie + Bearer-bridge, see
+ * lib/network/session.ts) only protects the app's own Server Actions,
+ * though — PR #16's independent release review (PHASE9A-RELEASE-REVIEW.md,
+ * finding D.1) found the collision was still live-reproducible by calling
+ * Payload's auto-generated REST endpoints directly (`POST
+ * /api/network-accounts/login` sets the exact same `payload-token` cookie
+ * the `users` collection's login sets — confirmed with a real request, not
+ * just source-reading), and that the same endpoints bypass this app's own
+ * throttle protection entirely (confirmed on forgot-password). Fixed below
+ * by shadowing those five endpoints with a blocking handler at the exact
+ * same {method, path} — `handleEndpoints` resolves the first array match
+ * (`node_modules/payload/dist/utilities/handleEndpoints.js`), and a
+ * collection's own `endpoints` entries are placed before Payload's
+ * auto-generated auth ones in the merged array
+ * (`collections/config/sanitize.js`), so ours wins. `verify` is
+ * deliberately left alone — it never sets a cookie, so it was never part
+ * of the collision surface, and the app doesn't call it via REST anyway
+ * (lib/network/verify.ts uses the Local API directly).
  *
  * admin.hidden — a network account must never appear in or authenticate
  * into Payload's /admin panel; that surface is for staff only.
  */
+const blockedAuthOperation: PayloadHandler = async (req) => {
+  console.warn(`[network-accounts:blocked-rest-auth-endpoint] ${req.method} ${req.url}`);
+  return Response.json({ message: "Not found" }, { status: 404 });
+};
+
+const blockedAuthEndpoints: Endpoint[] = (
+  ["login", "logout", "refresh-token", "forgot-password", "reset-password"] as const
+).map((path) => ({
+  path: `/${path}`,
+  method: "post",
+  handler: blockedAuthOperation,
+}));
+
 export const NetworkAccounts: CollectionConfig = {
   slug: "network-accounts",
   labels: { singular: "Network Account", plural: "Network Accounts" },
@@ -32,6 +63,7 @@ export const NetworkAccounts: CollectionConfig = {
     useAsTitle: "email",
     defaultColumns: ["email", "accountType", "status"],
   },
+  endpoints: blockedAuthEndpoints,
   auth: {
     verify: {
       generateEmailSubject: () => `Verify your ${siteConfig.name} Network account`,
