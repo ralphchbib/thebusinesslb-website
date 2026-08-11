@@ -1,6 +1,5 @@
-import Link from "next/link";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
+import { TrackedCta } from "@/components/analytics/tracked-cta";
 
 export interface HeroProps {
   eyebrow?: string;
@@ -66,12 +65,18 @@ export function Hero({
           <p className="measure-lead mt-5 text-lg leading-relaxed text-n600 md:text-xl">{subheadline}</p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button asChild size="lg">
-              <Link href={ctaPrimaryHref}>{ctaPrimaryLabel}</Link>
-            </Button>
-            <Button asChild variant="secondary" size="lg">
-              <Link href={ctaSecondaryHref}>{ctaSecondaryLabel}</Link>
-            </Button>
+            <TrackedCta href={ctaPrimaryHref} ctaId="hero_primary" ctaLocation="homepage_hero" size="lg">
+              {ctaPrimaryLabel}
+            </TrackedCta>
+            <TrackedCta
+              href={ctaSecondaryHref}
+              ctaId="hero_secondary"
+              ctaLocation="homepage_hero"
+              variant="secondary"
+              size="lg"
+            >
+              {ctaSecondaryLabel}
+            </TrackedCta>
           </div>
           {reassurance && <p className="mt-4 text-sm text-n500">{reassurance}</p>}
         </div>

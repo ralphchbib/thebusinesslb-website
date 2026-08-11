@@ -1,6 +1,10 @@
+"use client";
+
 import * as React from "react";
 import { Plus } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { track } from "@/lib/analytics/track";
 
 /**
  * Native <details>/<summary> — fully functional with JavaScript disabled,
@@ -17,9 +21,18 @@ export function AccordionItem({
   defaultOpen?: boolean;
   className?: string;
 }) {
+  const pathname = usePathname();
+
+  function handleToggle(e: React.SyntheticEvent<HTMLDetailsElement>) {
+    if (e.currentTarget.open) {
+      track("faq_open", { page: pathname || "", question });
+    }
+  }
+
   return (
     <details
       open={defaultOpen}
+      onToggle={handleToggle}
       className={cn("group border-b border-n200 py-5 first:pt-0 last:border-b-0", className)}
     >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left text-[17px] font-semibold text-ink marker:content-none">

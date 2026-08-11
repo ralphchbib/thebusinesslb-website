@@ -7,6 +7,7 @@ import { subscribeNewsletterAction, type FormState } from "@/lib/actions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { newsletter as newsletterDefaults } from "@/content/site";
+import { track } from "@/lib/analytics/track";
 
 const initialState: FormState = { status: "idle" };
 
@@ -49,6 +50,13 @@ export function NewsletterForm({
     sub: sub ?? newsletterDefaults.sub,
     consent: consent ?? newsletterDefaults.consent,
   };
+
+  React.useEffect(() => {
+    if (state.status === "success") {
+      track("newsletter_subscribe", { path: pathname || "" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.status]);
 
   if (state.status === "success") {
     return (

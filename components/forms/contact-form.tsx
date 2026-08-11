@@ -92,7 +92,13 @@ export function ContactForm() {
         htmlFor="message"
         error={state.fieldErrors?.message}
       >
-        <Textarea id="message" name="message" required hasError={!!state.fieldErrors?.message} />
+        <Textarea
+          id="message"
+          name="message"
+          required
+          hasError={!!state.fieldErrors?.message}
+          data-clarity-mask="true"
+        />
       </FormField>
 
       {state.status === "error" && !state.fieldErrors && (

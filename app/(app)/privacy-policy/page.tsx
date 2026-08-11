@@ -20,7 +20,7 @@ export default function PrivacyPolicyPage() {
           <h1 className="font-display text-[32px] font-medium tracking-[-0.02em] text-ink md:text-[40px]">
             Privacy policy
           </h1>
-          <p className="text-sm text-n500">Last updated 3 August 2026.</p>
+          <p className="text-sm text-n500">Last updated 11 August 2026.</p>
 
           <p>
             This policy explains what {siteConfig.name} collects when you use this website, why, and what
@@ -53,7 +53,22 @@ export default function PrivacyPolicyPage() {
           <p>You can ask us at any time what we hold about you, ask us to correct it, or ask us to delete it entirely. Email {siteConfig.email} and we&rsquo;ll act on it within a reasonable time.</p>
 
           <h2 className="font-display mt-4 text-2xl font-medium text-ink">Cookies and analytics</h2>
-          <p>Where analytics are enabled, they load only after you&rsquo;ve accepted non-essential cookies. Declining doesn&rsquo;t affect your ability to use the site or submit a form.</p>
+          <p>
+            This site uses Vercel Analytics and Vercel Speed Insights to understand overall traffic and page
+            performance. Both are cookieless — they don&rsquo;t identify you individually or store anything in
+            your browser — so they run automatically and aren&rsquo;t part of the choice below.
+          </p>
+          <p>
+            Where enabled, we also use Google Analytics (GA4) and Microsoft Clarity to understand how visitors
+            use the site — which pages get viewed, which links and buttons get clicked, and, with Clarity,
+            anonymised session recordings of on-page behaviour. These load only after you accept the cookie
+            banner shown on your first visit; declining means neither loads, and doesn&rsquo;t affect your
+            ability to use the site or submit a form. Your choice is remembered in your browser so you
+            aren&rsquo;t asked again. Free-text fields that may contain sensitive project details (e.g. the
+            assessment&rsquo;s &ldquo;biggest blocker&rdquo; question, the quote form&rsquo;s project
+            description, and the contact form&rsquo;s message field) are masked in Clarity recordings and never
+            shown as typed text.
+          </p>
 
           <h2 className="font-display mt-4 text-2xl font-medium text-ink">Questions</h2>
           <p>

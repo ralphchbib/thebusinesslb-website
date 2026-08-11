@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { Check } from "lucide-react";
 import { Section } from "@/components/blocks/section";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { TrackedCta } from "@/components/analytics/tracked-cta";
 import { cn } from "@/lib/utils";
 import type { PayloadPricingBlockDoc } from "@/lib/cms/types";
 
@@ -53,9 +52,15 @@ export function PagePricingBlock({
               ))}
             </ul>
             {tier.ctaHref && (
-              <Button asChild variant={tier.isRecommended ? "primary" : "secondary"} className="mt-6 w-full">
-                <Link href={tier.ctaHref}>{tier.ctaLabel || "Get started"}</Link>
-              </Button>
+              <TrackedCta
+                href={tier.ctaHref}
+                ctaId={`pricing_tier_${tier.name.toLowerCase().replace(/\s+/g, "_")}`}
+                ctaLocation="page_builder_pricing"
+                variant={tier.isRecommended ? "primary" : "secondary"}
+                className="mt-6 w-full"
+              >
+                {tier.ctaLabel || "Get started"}
+              </TrackedCta>
             )}
           </Card>
         ))}

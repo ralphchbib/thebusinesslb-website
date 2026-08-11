@@ -94,7 +94,13 @@ export function QuoteForm() {
         error={state.fieldErrors?.projectDescription}
         helper="Enough detail to actually price it — what you need, for whom, and any must-haves."
       >
-        <Textarea id="projectDescription" name="projectDescription" required hasError={!!state.fieldErrors?.projectDescription} />
+        <Textarea
+          id="projectDescription"
+          name="projectDescription"
+          required
+          hasError={!!state.fieldErrors?.projectDescription}
+          data-clarity-mask="true"
+        />
       </FormField>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">

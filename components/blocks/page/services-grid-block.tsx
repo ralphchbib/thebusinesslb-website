@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Section } from "@/components/blocks/section";
 import { Card } from "@/components/ui/card";
+import { TrackedLink } from "@/components/analytics/tracked-cta";
 import { getServicesByIds, getAllServices } from "@/lib/cms/services";
 import type { PayloadServicesGridBlockDoc } from "@/lib/cms/types";
 
@@ -42,14 +42,19 @@ export async function PageServicesGridBlock({
       <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
         {items.map((svc) => (
           <Card key={svc.slug} className="h-full bg-white">
-            <Link href={`/services/${svc.slug}/`} className="flex h-full flex-col">
+            <TrackedLink
+              href={`/services/${svc.slug}/`}
+              ctaId={`services_grid_${svc.slug}`}
+              ctaLocation="page_builder_services_grid"
+              className="flex h-full flex-col"
+            >
               {svc.eyebrow && <p className="eyebrow mb-2">{svc.eyebrow}</p>}
               <h3 className="text-lg font-semibold text-ink">{svc.h1}</h3>
               <p className="mt-2 text-sm font-medium text-petrol">{svc.priceAnchor}</p>
               <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-petrol">
                 See what&rsquo;s included <ArrowRight className="h-3.5 w-3.5" />
               </span>
-            </Link>
+            </TrackedLink>
           </Card>
         ))}
       </div>

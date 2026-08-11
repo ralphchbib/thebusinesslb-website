@@ -18,6 +18,7 @@ import { RelatedCaseStudies } from "@/components/blocks/related-case-studies";
 import { TestimonialsRow } from "@/components/blocks/testimonials-row";
 import { Section } from "@/components/blocks/section";
 import { Button } from "@/components/ui/button";
+import { ViewTracker } from "@/components/analytics/view-tracker";
 
 export async function generateStaticParams() {
   const slugs = await getPublishedServiceSlugs();
@@ -68,6 +69,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
 
   return (
     <>
+      <ViewTracker event="service_page_view" payload={{ service: service.slug }} />
       {jsonLd.map((schema, i) => (
         <script
           key={i}

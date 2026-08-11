@@ -7,6 +7,7 @@ import { Section } from "@/components/blocks/section";
 import { Reveal } from "@/components/motion/reveal";
 import { Button } from "@/components/ui/button";
 import { WhatsAppLink } from "@/components/whatsapp-link";
+import { ViewTracker } from "@/components/analytics/view-tracker";
 import { getAllServices } from "@/lib/cms/services";
 import { getFaqsByScope } from "@/lib/cms/faqs";
 import { getSiteSettings } from "@/lib/cms/site-settings";
@@ -28,6 +29,7 @@ export default async function PricingPage() {
 
   return (
     <>
+      <ViewTracker event="pricing_view" payload={{ path: "/pricing/" }} />
       {faqs.length > 0 && (
         <script
           type="application/ld+json"

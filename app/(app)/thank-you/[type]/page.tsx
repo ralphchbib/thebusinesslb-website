@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Section } from "@/components/blocks/section";
 import { Button } from "@/components/ui/button";
 import { WhatsAppLink } from "@/components/whatsapp-link";
+import { ThankYouTracker } from "@/components/analytics/thank-you-tracker";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { thankYouAssessment } from "@/content/assessment";
 import { thankYouContact, thankYouSubscribe } from "@/content/contact";
@@ -46,6 +47,7 @@ export default async function ThankYouPage({
     const articles = await getRecentArticles(3);
     return (
       <>
+        <ThankYouTracker type="assessment" path="/thank-you/assessment/" />
         <Section surface="white" className="text-center">
           <h1 className="font-display text-[32px] font-medium tracking-[-0.02em] text-ink md:text-[44px]">
             {thankYouAssessment.h1}
@@ -98,6 +100,7 @@ export default async function ThankYouPage({
   if (type === "contact") {
     return (
       <Section surface="white" className="text-center">
+        <ThankYouTracker type="contact" path="/thank-you/contact/" />
         <h1 className="font-display text-[32px] font-medium tracking-[-0.02em] text-ink md:text-[44px]">
           {thankYouContact.h1}
         </h1>
@@ -112,6 +115,7 @@ export default async function ThankYouPage({
   if (type === "quote") {
     return (
       <Section surface="white" className="text-center">
+        <ThankYouTracker type="quote" path="/thank-you/quote/" />
         <h1 className="font-display text-[32px] font-medium tracking-[-0.02em] text-ink md:text-[44px]">
           {thankYouQuote.h1}
         </h1>

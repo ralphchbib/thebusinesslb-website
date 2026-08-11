@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { InstagramIcon } from "@/components/icons/instagram";
 import { Logo } from "./logo";
-import { whatsappLink } from "@/lib/config";
+import { WhatsAppTextLink } from "@/components/whatsapp-link";
 import { NewsletterForm } from "@/components/forms/newsletter-form";
 import { getSiteSettings } from "@/lib/cms/site-settings";
 import { getNavItems } from "@/lib/cms/navigation";
@@ -85,14 +85,9 @@ export async function Footer() {
             <Link href="/terms/" className="transition-colors hover:text-white">
               Terms
             </Link>
-            <a
-              href={whatsappLink("footer")}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors hover:text-white"
-            >
+            <WhatsAppTextLink pageName="footer" position="footer" className="transition-colors hover:text-white">
               WhatsApp
-            </a>
+            </WhatsAppTextLink>
           </div>
         </div>
       </div>
