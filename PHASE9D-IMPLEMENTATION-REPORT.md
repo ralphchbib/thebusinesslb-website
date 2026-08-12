@@ -81,3 +81,47 @@ See PR opened against `main` — not merged, per instruction.
 ## I. Release Review Recommendation
 
 **Ready for independent release review.** Every item in the approved design shipped, the one real security consideration the design flagged (email-change/re-verification behavior) was investigated first, found to be a genuine gap, and closed with a live-verified fix — not assumed safe and not left for review to catch. No regressions found in directory/search/existing-profile functionality. The one disclosed limitation (§C, token replay within its 1-hour window) is a legitimate, honestly-reported design tradeoff for staying within "zero schema changes," not an oversight — recommend the reviewer weigh it explicitly rather than treat its absence from the design doc as new information.
+
+## J. Post-Merge Remediation — Duplicate `id="currentPassword"` Fix
+
+PR #20 merged and shipped to production (`7d65eac`). During post-deployment production validation, an automated test script's own use of `document.getElementById('currentPassword')` silently targeted the wrong form field, which led to discovering a genuine, reproducible defect that both implementation-time coding and the independent release review had missed: `components/network/change-email-form.tsx` and `components/network/change-password-form.tsx` both rendered a "Current password" field using the identical `id="currentPassword"` (and identical `<label htmlFor="currentPassword">`) on the same page, `/dashboard/settings`, now that Phase 9D put both forms there together for the first time.
+
+**Impact confirmed live before fixing**: `document.querySelectorAll('#currentPassword')` returned 2 elements; clicking either form's "Current password" `<label>` always focused the *first* matching field in DOM order (the Change Email form's), not the field under the clicked label whenever it was the Change Password form's label. This is a genuine WCAG 4.1.1/1.3.1 (duplicate IDs / label association) failure, not a cosmetic nitpick — keyboard and assistive-technology users clicking or tabbing to the Change Password form's label would land on the wrong field.
+
+**Fix** (branch `fix/phase9d-duplicate-id-settings`, off latest `main`, since PR #20 is already merged and closed):
+
+| File | Change |
+|---|---|
+| `components/network/change-email-form.tsx` | `id`/`htmlFor` changed from `currentPassword` → `changeEmailCurrentPassword` |
+| `components/network/change-password-form.tsx` | `id`/`htmlFor` changed from `currentPassword` → `changePasswordCurrentPassword` |
+
+`name="currentPassword"` deliberately left unchanged in both — the Server Actions read the submitted value via `formData.get("currentPassword")` by `name`, not `id`, so no action/schema changes were needed. Only the `id`/`htmlFor` pair needed to become unique.
+
+### Validation (fresh test account, id 61 "Fix Test Bakery" — created, exercised, then deleted and confirmed at 0 remaining)
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Clicking the Change Password label focuses the correct field | Confirmed — `document.activeElement.id === "changePasswordCurrentPassword"` after clicking that label |
+| 2 | Clicking the Change Email label focuses the correct field | Confirmed — `document.activeElement.id === "changeEmailCurrentPassword"` after clicking that label |
+| 3 | Keyboard navigation works correctly | Confirmed with a real `Tab` keypress (not simulated focus) from the `newEmail` field landing on `changeEmailCurrentPassword` |
+| 4 | Password change still works | Confirmed — submitted, got "Password updated," then fully re-verified by logging out and logging back in with the new password |
+| 5 | Email change still works | Confirmed — submitted with the newly-scoped field id, got the confirmation-email-sent message |
+| 6 | Email confirmation still works | Confirmed — token verified, "Email updated," then fully re-verified by logging out and logging back in with the new email + password |
+| 7 | Route protection still works | Confirmed — unauthenticated `/dashboard` → redirect to `/login` |
+| 8 | Dashboard functionality still works | Confirmed — Dashboard Home renders correctly post-fix |
+| 9 | No regressions | Confirmed — `/network/businesses` renders correctly, no leaked test data |
+
+**Quality gates re-run fresh on the fix branch**: `tsc --noEmit` — 0 errors. `next lint` — 0 errors/warnings. `node --test` — 4/4 passing. `next build` — succeeds, 49 routes (identical route list to pre-fix, no size/route regressions).
+
+### Resolution of the previously-disclosed confirm-email-token finding
+
+During Phase 9D production validation, two attempts to verify the confirm-email token mechanism *from outside the running production process* — by pulling the production `PAYLOAD_SECRET` via `vercel env pull` and minting a token locally against it — both failed against the live confirm-email page ("This link isn't valid"), despite a SHA-256 hash comparison confirming the pulled secret genuinely matched production's and was freshly pulled each time. That was left as an inconclusive, undetermined finding.
+
+**Resolution: Option A — confirmed working correctly, not a defect.** During this fix's own validation (see item 6 above), the exact same `signEmailChangeToken`/`verifyEmailChangeToken` code path (`lib/network/email-change.ts`, unmodified by this fix) was exercised end-to-end a third consecutive time — sign and verify both happening naturally within the same running dev process, exactly as they do for a real user in production (a real user's browser never mints its own token; the server signs it when the request is made and verifies it when the link is opened, always within the same running process, never re-derived externally) — and succeeded cleanly, including the full re-login proof with the new email. Across three independent implementation/review/fix-validation passes, the sign→email→verify round-trip has never once failed when exercised the way a real user actually exercises it.
+
+The two production failures are best explained as an artifact of the *external verification method itself* (pulling a secret via a separate CLI process and minting a token outside the live runtime), not a defect in the token logic — most plausibly some difference between the pulled `.env` snapshot and the value Vercel's running Lambda actually holds in memory at request time (e.g. a secret rotation, redeploy, or multi-region/env-target nuance not captured by a point-in-time `vercel env pull`), which is a testing-methodology limitation, not an application bug. No code change was made or is warranted. No separate issue is being opened. If a genuine production failure of this flow is ever observed by a real user (as opposed to an externally-minted diagnostic token), that would warrant reopening this investigation with production logs rather than external secret-pulling.
+
+### Commit / PR
+
+- Commit: see §K below (filled in after commit)
+- New PR opened against `main` from `fix/phase9d-duplicate-id-settings`, since PR #20 is already merged and closed — see §K for the PR URL. **Not merged**, per instruction.

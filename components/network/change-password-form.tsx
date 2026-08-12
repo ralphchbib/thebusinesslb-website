@@ -15,11 +15,11 @@ export function ChangePasswordForm() {
     <form action={formAction} className="flex flex-col gap-5">
       <FormField
         label="Current password"
-        htmlFor="currentPassword"
+        htmlFor="changePasswordCurrentPassword"
         error={state.fieldErrors?.currentPassword}
       >
         <Input
-          id="currentPassword"
+          id="changePasswordCurrentPassword"
           name="currentPassword"
           type="password"
           required
