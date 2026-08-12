@@ -3,13 +3,17 @@
 import { redirect } from "next/navigation";
 import { getCms } from "@/lib/cms/client";
 import { checkThrottle } from "@/lib/actions";
+import { sendEmail } from "@/lib/email/send";
+import { siteConfig } from "@/lib/config";
 import { setNetworkSessionCookie, clearNetworkSessionCookie, getNetworkUser } from "@/lib/network/session";
+import { signEmailChangeToken } from "@/lib/network/email-change";
 import {
   registerSchema,
   loginSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   changePasswordSchema,
+  requestEmailChangeSchema,
 } from "@/lib/validation/network-schemas";
 
 export interface NetworkFormState {
@@ -249,4 +253,79 @@ export async function changePasswordAction(
   });
 
   return { status: "success", message: "Password updated." };
+}
+
+/**
+ * Phase 9D — sends a confirmation link to the *new* address rather than
+ * changing the email immediately. Payload's update() doesn't re-verify an
+ * account on email change (confirmed by reading
+ * collections/operations/update.js — no such logic exists), so completing
+ * the change without proving the requester controls the new address would
+ * let a hijacked session silently repoint the account's login identity.
+ * Same current-password re-auth as changePasswordAction, for the same
+ * reason (a stolen/left-open session alone isn't enough). The actual email
+ * field is only updated once the link is clicked — see
+ * app/(network)/dashboard/settings/confirm-email/page.tsx.
+ */
+export async function requestEmailChangeAction(
+  _prev: NetworkFormState,
+  formData: FormData,
+): Promise<NetworkFormState> {
+  const user = await getNetworkUser();
+  if (!user) {
+    return { status: "error", message: "Your session has expired. Please log in again." };
+  }
+
+  const allowed = await checkThrottle("network-change-email");
+  if (!allowed) {
+    return { status: "error", message: "Too many attempts. Try again shortly." };
+  }
+
+  const parsed = requestEmailChangeSchema.safeParse({
+    currentPassword: formData.get("currentPassword"),
+    newEmail: formData.get("newEmail"),
+  });
+  if (!parsed.success) {
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of parsed.error.issues) {
+      fieldErrors[String(issue.path[0])] = issue.message;
+    }
+    return { status: "error", message: "Check the highlighted fields.", fieldErrors };
+  }
+
+  const payload = await getCms();
+  try {
+    await payload.login({
+      collection: "network-accounts",
+      data: { email: user.email, password: parsed.data.currentPassword },
+    });
+  } catch {
+    return {
+      status: "error",
+      message: "Current password is incorrect.",
+      fieldErrors: { currentPassword: "Incorrect." },
+    };
+  }
+
+  if (parsed.data.newEmail.toLowerCase() === user.email.toLowerCase()) {
+    return { status: "error", message: "That's already your current email.", fieldErrors: { newEmail: "Already your email." } };
+  }
+
+  const token = signEmailChangeToken(String(user.id), parsed.data.newEmail);
+  const confirmUrl = `${siteConfig.url}/dashboard/settings/confirm-email?token=${token}`;
+  await sendEmail({
+    to: parsed.data.newEmail,
+    subject: `Confirm your new ${siteConfig.name} email address`,
+    html: `
+      <p>Hi ${user.name},</p>
+      <p>Confirm this address to make it your new ${siteConfig.name} Network login email.</p>
+      <p><a href="${confirmUrl}">Confirm my new email</a></p>
+      <p>This link expires in 1 hour. If you didn't request this, you can ignore it — your email won't change.</p>
+    `,
+  });
+
+  return {
+    status: "success",
+    message: `Check ${parsed.data.newEmail} for a confirmation link to finish the change.`,
+  };
 }
