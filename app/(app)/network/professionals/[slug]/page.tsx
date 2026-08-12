@@ -3,7 +3,11 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { getCms } from "@/lib/cms/client";
 import { getNetworkUser } from "@/lib/network/session";
+import { buildMetadata } from "@/lib/seo/metadata";
+import { breadcrumbSchema } from "@/lib/seo/schema-org";
+import { Breadcrumb } from "@/components/blocks/breadcrumb";
 import { Section } from "@/components/blocks/section";
+import { Badge } from "@/components/ui/badge";
 
 async function getProfile(slug: string) {
   const payload = await getCms();
@@ -28,7 +32,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const profile = await getProfile(slug);
   if (!profile || !(await canView(profile))) return {};
-  return { title: `${profile.name as string} — ${profile.title as string}`, description: profile.bio as string };
+  return buildMetadata({
+    title: `${profile.name as string} — ${profile.title as string} | THE BUSINESS lb`,
+    description: profile.bio as string,
+    path: `/network/professionals/${slug}/`,
+  });
 }
 
 export default async function ProfessionalProfilePage({ params }: { params: Promise<{ slug: string }> }) {
@@ -54,8 +62,23 @@ export default async function ProfessionalProfilePage({ params }: { params: Prom
     return result.docs;
   })();
 
+  const languages = (profile.languages as string[]) ?? [];
+
   return (
-    <Section>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            breadcrumbSchema([
+              { name: "Professionals", path: "/network/professionals/" },
+              { name: profile.name as string, path: `/network/professionals/${slug}/` },
+            ]),
+          ),
+        }}
+      />
+      <Breadcrumb items={[{ name: "Professionals", href: "/network/professionals" }, { name: profile.name as string }]} />
+      <Section>
       {profile._status === "draft" && (
         <div className="mb-6 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
           This profile is unpublished — only you can see this preview.
@@ -66,11 +89,25 @@ export default async function ProfessionalProfilePage({ params }: { params: Prom
         {photo?.url && <Image src={photo.url} alt={photo.alt ?? profile.name as string} width={64} height={64} className="rounded-full" />}
         <div>
           <h1 className="font-display text-3xl font-medium text-ink">{profile.name as string}</h1>
-          <p className="text-n500">{profile.title as string}</p>
+          <p className="text-n500">
+            {[profile.title, profile.category].filter(Boolean).join(" · ")}
+          </p>
         </div>
       </div>
 
       <p className="mt-6 max-w-2xl text-[17px] leading-relaxed text-n700">{profile.bio as string}</p>
+
+      {Boolean(profile.location) && <p className="mt-4 text-[15px] text-n600">📍 {profile.location as string}</p>}
+
+      {languages.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {languages.map((lang) => (
+            <Badge key={lang} variant="neutral">
+              {lang}
+            </Badge>
+          ))}
+        </div>
+      )}
 
       {(Boolean(profile.contactEmail) || Boolean(profile.contactPhone)) && (
         <div className="mt-4 flex flex-col gap-1 text-[15px] text-n600">
@@ -133,6 +170,7 @@ export default async function ProfessionalProfilePage({ params }: { params: Prom
           </div>
         </div>
       )}
-    </Section>
+      </Section>
+    </>
   );
 }

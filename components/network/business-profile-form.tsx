@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
+import { LANGUAGE_OPTIONS } from "@/payload/language-options";
 
 const initialState: ProfileFormState = { status: "idle" };
 
@@ -17,7 +18,9 @@ export function BusinessProfileForm({
     slug?: string;
     description?: string;
     industry?: string;
+    category?: string;
     location?: string;
+    languages?: string[];
     contactEmail?: string;
     contactPhone?: string;
     servicesText?: string;
@@ -45,10 +48,31 @@ export function BusinessProfileForm({
         <FormField label="Industry" htmlFor="industry" optional>
           <Input id="industry" name="industry" defaultValue={defaultValues?.industry} />
         </FormField>
-        <FormField label="Location" htmlFor="location" optional>
-          <Input id="location" name="location" defaultValue={defaultValues?.location} />
+        <FormField label="Category" htmlFor="category" optional helper="More specific than industry.">
+          <Input id="category" name="category" defaultValue={defaultValues?.category} />
         </FormField>
       </div>
+
+      <FormField label="Location" htmlFor="location" optional>
+        <Input id="location" name="location" defaultValue={defaultValues?.location} />
+      </FormField>
+
+      <FormField label="Languages" htmlFor="languages" optional>
+        <div className="flex flex-wrap gap-4">
+          {LANGUAGE_OPTIONS.map((opt) => (
+            <label key={opt.value} className="flex items-center gap-2 text-[14px] text-ink">
+              <input
+                type="checkbox"
+                name="languages"
+                value={opt.value}
+                defaultChecked={defaultValues?.languages?.includes(opt.value)}
+                className="h-4 w-4 accent-petrol"
+              />
+              {opt.label}
+            </label>
+          ))}
+        </div>
+      </FormField>
 
       <div className="grid grid-cols-2 gap-4">
         <FormField label="Contact email" htmlFor="contactEmail" optional error={state.fieldErrors?.contactEmail}>

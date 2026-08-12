@@ -3,7 +3,11 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { getCms } from "@/lib/cms/client";
 import { getNetworkUser } from "@/lib/network/session";
+import { buildMetadata } from "@/lib/seo/metadata";
+import { breadcrumbSchema } from "@/lib/seo/schema-org";
+import { Breadcrumb } from "@/components/blocks/breadcrumb";
 import { Section } from "@/components/blocks/section";
+import { Badge } from "@/components/ui/badge";
 
 /**
  * Phase 9B — public business profile. A draft is only visible to its
@@ -35,7 +39,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const profile = await getProfile(slug);
   if (!profile || !(await canView(profile))) return {};
-  return { title: profile.companyName as string, description: profile.description as string };
+  return buildMetadata({
+    title: `${profile.companyName as string} | THE BUSINESS lb`,
+    description: profile.description as string,
+    path: `/network/businesses/${slug}/`,
+  });
 }
 
 export default async function BusinessProfilePage({ params }: { params: Promise<{ slug: string }> }) {
@@ -64,8 +72,23 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
     return result.docs;
   })();
 
+  const languages = (profile.languages as string[]) ?? [];
+
   return (
-    <Section>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            breadcrumbSchema([
+              { name: "Businesses", path: "/network/businesses/" },
+              { name: profile.companyName as string, path: `/network/businesses/${slug}/` },
+            ]),
+          ),
+        }}
+      />
+      <Breadcrumb items={[{ name: "Businesses", href: "/network/businesses" }, { name: profile.companyName as string }]} />
+      <Section>
       {profile._status === "draft" && (
         <div className="mb-6 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
           This profile is unpublished — only you can see this preview.
@@ -76,13 +99,27 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
         {logo?.url && <Image src={logo.url} alt={logo.alt ?? profile.companyName as string} width={64} height={64} className="rounded-md" />}
         <div>
           <h1 className="font-display text-3xl font-medium text-ink">{profile.companyName as string}</h1>
-          {Boolean(profile.industry) && <p className="text-n500">{profile.industry as string}</p>}
+          {(Boolean(profile.industry) || Boolean(profile.category)) && (
+            <p className="text-n500">
+              {[profile.industry, profile.category].filter(Boolean).join(" · ")}
+            </p>
+          )}
         </div>
       </div>
 
       <p className="mt-6 max-w-2xl text-[17px] leading-relaxed text-n700">{profile.description as string}</p>
 
       {Boolean(profile.location) && <p className="mt-4 text-[15px] text-n600">📍 {profile.location as string}</p>}
+
+      {languages.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {languages.map((lang) => (
+            <Badge key={lang} variant="neutral">
+              {lang}
+            </Badge>
+          ))}
+        </div>
+      )}
 
       {(Boolean(profile.contactEmail) || Boolean(profile.contactPhone)) && (
         <div className="mt-4 flex flex-col gap-1 text-[15px] text-n600">
@@ -128,6 +165,7 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
           </div>
         </div>
       )}
-    </Section>
+      </Section>
+    </>
   );
 }

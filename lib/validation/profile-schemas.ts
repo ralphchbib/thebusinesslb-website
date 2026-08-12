@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { LANGUAGE_VALUES } from "@/payload/language-options";
+
+const languagesSchema = z.array(z.enum(LANGUAGE_VALUES as [string, ...string[]])).default([]);
 
 const slugSchema = z
   .string()
@@ -21,7 +24,9 @@ export const businessProfileSchema = z.object({
   slug: slugSchema,
   description: z.string().trim().min(10, "Enter at least a short description."),
   industry: z.string().trim().optional(),
+  category: z.string().trim().optional(),
   location: z.string().trim().optional(),
+  languages: languagesSchema,
   contactEmail: z.string().trim().email("That email address doesn't look right.").optional().or(z.literal("")),
   contactPhone: z.string().trim().optional(),
   services: z.array(serviceSchema).default([]),
@@ -43,6 +48,9 @@ export const professionalProfileSchema = z.object({
   name: z.string().trim().min(2, "Enter a name."),
   slug: slugSchema,
   title: z.string().trim().min(2, "Enter a professional title."),
+  category: z.string().trim().optional(),
+  location: z.string().trim().optional(),
+  languages: languagesSchema,
   bio: z.string().trim().min(10, "Enter at least a short bio."),
   contactEmail: z.string().trim().email("That email address doesn't look right.").optional().or(z.literal("")),
   contactPhone: z.string().trim().optional(),

@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import { readPublishedOrOwnerOrStaff, createProfessionalProfile, updateOrDeleteByOwnerOrStaff } from "../access-profiles";
+import { LANGUAGE_OPTIONS } from "../language-options";
 
 /**
  * Phase 9B — a Professional-account's public profile. Same shape and
@@ -47,7 +48,20 @@ export const ProfessionalProfiles: CollectionConfig = {
     },
     { name: "photo", type: "upload", relationTo: "media" },
     { name: "title", type: "text", required: true },
+    {
+      name: "category",
+      type: "text",
+      admin: { description: "Optional, finer-grained than title — e.g. \"Corporate Lawyer\" within \"Legal\". Phase 9C directory filter." },
+    },
+    { name: "location", type: "text" },
     { name: "bio", type: "textarea", required: true },
+    {
+      name: "languages",
+      type: "select",
+      hasMany: true,
+      options: LANGUAGE_OPTIONS as unknown as { label: string; value: string }[],
+      admin: { description: "Phase 9C directory filter." },
+    },
     {
       name: "skills",
       type: "array",

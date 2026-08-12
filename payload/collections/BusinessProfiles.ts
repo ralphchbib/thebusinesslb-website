@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import { readPublishedOrOwnerOrStaff, createBusinessProfile, updateOrDeleteByOwnerOrStaff } from "../access-profiles";
+import { LANGUAGE_OPTIONS } from "../language-options";
 
 /**
  * Phase 9B — a Business-account's public profile. Owned by exactly one
@@ -53,7 +54,19 @@ export const BusinessProfiles: CollectionConfig = {
     { name: "logo", type: "upload", relationTo: "media" },
     { name: "description", type: "textarea", required: true },
     { name: "industry", type: "text" },
+    {
+      name: "category",
+      type: "text",
+      admin: { description: "Optional, finer-grained than industry — e.g. \"Restaurant\" within \"Food & Beverage\". Phase 9C directory filter." },
+    },
     { name: "location", type: "text" },
+    {
+      name: "languages",
+      type: "select",
+      hasMany: true,
+      options: LANGUAGE_OPTIONS as unknown as { label: string; value: string }[],
+      admin: { description: "Phase 9C directory filter." },
+    },
     {
       name: "services",
       type: "array",
