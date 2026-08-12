@@ -38,6 +38,33 @@ export const foundingClients = {
   cta: "Apply as a founding client",
 };
 
+// Phase 9 — introduces THE BUSINESS Network (Phase 9A/9B: accounts,
+// business/professional profiles, portfolio). Deliberately no directory
+// preview, counts, or featured-profile content — there's no real
+// directory yet (that's Phase 9C) and no published profiles to feature.
+// See PHASE9-HOMEPAGE-ALIGNMENT.md for why.
+export const networkIntro = {
+  eyebrow: "THE BUSINESS Network",
+  h2: "One profile. Your whole presence.",
+  body: "THE BUSINESS Network is a free place for Lebanese businesses and professionals to build a real, public profile — a page that represents you properly, with your services and your work, at a link you can actually share.",
+  joinCta: "Join the Network",
+  loginCta: "Already have an account? Log in",
+  cards: [
+    {
+      label: "For businesses",
+      h3: "Build your business profile",
+      body: "A public page for your company: what you do, the services you offer, and a portfolio of the work you've done — all in one place, at your own link.",
+      cta: "Create your business profile",
+    },
+    {
+      label: "For professionals",
+      h3: "Build your professional profile",
+      body: "A public page for you: your title, your bio, your skills and experience, the services you offer, and a portfolio of your work.",
+      cta: "Create your professional profile",
+    },
+  ],
+};
+
 export const sectors = {
   eyebrow: "Who we work with",
   h2: "We work best with businesses that already have something worth selling.",
