@@ -24,9 +24,9 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
         />
       </FormField>
 
-      <FormField label="Current password" htmlFor="currentPassword" error={state.fieldErrors?.currentPassword}>
+      <FormField label="Current password" htmlFor="changeEmailCurrentPassword" error={state.fieldErrors?.currentPassword}>
         <Input
-          id="currentPassword"
+          id="changeEmailCurrentPassword"
           name="currentPassword"
           type="password"
           required
