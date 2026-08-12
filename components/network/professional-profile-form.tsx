@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
+import { LANGUAGE_OPTIONS } from "@/payload/language-options";
 
 const initialState: ProfileFormState = { status: "idle" };
 
@@ -16,6 +17,9 @@ export function ProfessionalProfileForm({
     name?: string;
     slug?: string;
     title?: string;
+    category?: string;
+    location?: string;
+    languages?: string[];
     bio?: string;
     contactEmail?: string;
     contactPhone?: string;
@@ -39,6 +43,32 @@ export function ProfessionalProfileForm({
 
       <FormField label="Professional title" htmlFor="title" error={state.fieldErrors?.title}>
         <Input id="title" name="title" required defaultValue={defaultValues?.title} />
+      </FormField>
+
+      <div className="grid grid-cols-2 gap-4">
+        <FormField label="Category" htmlFor="category" optional helper="More specific than title.">
+          <Input id="category" name="category" defaultValue={defaultValues?.category} />
+        </FormField>
+        <FormField label="Location" htmlFor="location" optional>
+          <Input id="location" name="location" defaultValue={defaultValues?.location} />
+        </FormField>
+      </div>
+
+      <FormField label="Languages" htmlFor="languages" optional>
+        <div className="flex flex-wrap gap-4">
+          {LANGUAGE_OPTIONS.map((opt) => (
+            <label key={opt.value} className="flex items-center gap-2 text-[14px] text-ink">
+              <input
+                type="checkbox"
+                name="languages"
+                value={opt.value}
+                defaultChecked={defaultValues?.languages?.includes(opt.value)}
+                className="h-4 w-4 accent-petrol"
+              />
+              {opt.label}
+            </label>
+          ))}
+        </div>
       </FormField>
 
       <FormField label="Bio" htmlFor="bio" error={state.fieldErrors?.bio}>
