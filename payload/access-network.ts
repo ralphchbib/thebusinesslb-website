@@ -14,12 +14,14 @@ import type { Access, FieldAccess } from "payload";
  * against the installed Payload 3.87.0 source; not present in the
  * generated per-collection TypeScript types, hence the cast below).
  */
-function isStaff(user: unknown): boolean {
+// Exported for reuse by payload/access-profiles.ts (Phase 9B) — the same
+// staff/network-account distinction applies to profile ownership checks.
+export function isStaff(user: unknown): boolean {
   const u = user as { collection?: string; role?: string } | null | undefined;
   return Boolean(u && u.collection === "users" && (u.role === "admin" || u.role === "editor"));
 }
 
-function isNetworkAccount(user: unknown): user is { collection: string; id: string } {
+export function isNetworkAccount(user: unknown): user is { collection: string; id: string } {
   const u = user as { collection?: string } | null | undefined;
   return Boolean(u && u.collection === "network-accounts");
 }

@@ -27,6 +27,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <p className="text-[13px] capitalize text-n500">{user.accountType} account</p>
         </div>
         <div className="flex items-center gap-4">
+          {(user.accountType === "business" || user.accountType === "professional") && (
+            <Link href="/dashboard/profile" className="text-[13px] font-semibold text-petrol">
+              My Profile
+            </Link>
+          )}
           <Link href="/dashboard/settings" className="text-[13px] font-semibold text-petrol">
             Settings
           </Link>
