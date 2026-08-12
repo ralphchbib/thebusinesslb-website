@@ -76,3 +76,13 @@ No existing route, collection, or access-control function outside the additive f
 - Reviews, verification, opportunities, AI, CRM, marketplace — out of scope per this turn's explicit authorization.
 - A new schema.org type (`LocalBusiness`/`Person`) for detail pages — the SEO fix reused the existing `buildMetadata()`/`breadcrumbSchema()` pattern only.
 - No merge, no deploy — PR opened for review, not merged, per instruction.
+
+## 7. Remediation: stored XSS in profile-owner-controlled JSON-LD (post-review fix)
+
+The independent release review ([PHASE9C-RELEASE-REVIEW.md](PHASE9C-RELEASE-REVIEW.md) §C) found that the new `breadcrumbSchema()` JSON-LD blocks on both `[slug]` detail pages embedded `profile.companyName`/`profile.name` — a field any self-registered business or professional account controls directly, with no moderation gate — via `dangerouslySetInnerHTML={{ __html: JSON.stringify(...) }}` with no escaping. `JSON.stringify` doesn't escape `</script>`, so a company/professional name containing that literal sequence closes the JSON-LD script tag early in the browser's HTML parser and lets an attacker-chosen sibling `<script>` execute. Live-confirmed via a real test profile (`companyName: 'XSS Test</script><script>window.__xssFired=true</script>'`) — `window.__xssFired` fired `true` on page load before the fix.
+
+**Fix** (`app/(app)/network/businesses/[slug]/page.tsx`, `.../professionals/[slug]/page.tsx`): the JSON-LD `__html` string now has `.replace(/</g, "\\u003c")` applied before embedding — escaping `<` to a Unicode escape sequence the HTML parser can't interpret as a tag boundary, while the JSON itself stays fully valid (decodes back to `<` for any real JSON-LD consumer). No other file in this PR embeds profile-owner-controlled data via `dangerouslySetInnerHTML` — the listing/hub pages' `breadcrumbSchema()` calls use only hardcoded strings.
+
+**Verified independently**: the exact same exploit profile, recreated against the fixed code, no longer executes (`window.__xssFired` is `undefined`; the served JSON-LD now contains the escaped sequence). All test data deleted and confirmed at 0 remaining.
+
+This same unescaped-JSON.stringify-in-`dangerouslySetInnerHTML` pattern pre-exists in 9 other files in this codebase (e.g. `case-studies/[slug]/page.tsx`), all embedding staff-authored (not public self-service) content — lower severity in practice, but the same class of issue. Out of scope for this PR since none of those files are touched here; flagged as a follow-up hardening task.

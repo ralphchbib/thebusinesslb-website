@@ -78,13 +78,18 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
     <>
       <script
         type="application/ld+json"
+        // profile.companyName is public, self-service, owner-controlled input
+        // (Phase 9B). Without escaping `<`, a company name containing a
+        // literal `</script>` closes this tag early in the HTML parser and
+        // lets an attacker-chosen sibling <script> execute — confirmed
+        // exploitable live during Phase 9C release review before this fix.
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(
             breadcrumbSchema([
               { name: "Businesses", path: "/network/businesses/" },
               { name: profile.companyName as string, path: `/network/businesses/${slug}/` },
             ]),
-          ),
+          ).replace(/</g, "\\u003c"),
         }}
       />
       <Breadcrumb items={[{ name: "Businesses", href: "/network/businesses" }, { name: profile.companyName as string }]} />
