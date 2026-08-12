@@ -123,5 +123,5 @@ The two production failures are best explained as an artifact of the *external v
 
 ### Commit / PR
 
-- Commit: see §K below (filled in after commit)
-- New PR opened against `main` from `fix/phase9d-duplicate-id-settings`, since PR #20 is already merged and closed — see §K for the PR URL. **Not merged**, per instruction.
+- Commit: `aff0156` (branch `fix/phase9d-duplicate-id-settings`, off `main` post-merge of PR #20)
+- PR: [#21](https://github.com/ralphchbib/thebusinesslb-website/pull/21) — new PR against `main`, since PR #20 is already merged and closed and cannot be pushed to directly. **Not merged**, per instruction.
