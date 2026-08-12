@@ -26,7 +26,39 @@ export const readPublishedOrOwnerOrStaff: Access = ({ req: { user } }) => {
   return where;
 };
 
-/** Any logged-in network account can create — ownership is set server-side by the Server Action, never trusted from the client. */
+/**
+ * PR #17 release review, finding #1: `create` must check `accountType`,
+ * not just "is this any network account" — otherwise a Consumer/
+ * Institution/Diaspora account can create a business or professional
+ * profile directly via the REST API (live-confirmed during review, not
+ * theoretical), and any account can create more than one profile of its
+ * own type, since the Server Action's find-existing-or-create logic is a
+ * UI-path convenience a direct API call is never bound by. Both are
+ * closed here, at the actual enforcement point, not just the Server
+ * Action: staff can always create (moderation/support); a network
+ * account can create only if `accountType` matches the target collection
+ * AND it doesn't already own one.
+ */
+function createOwnedProfile(collection: "business-profiles" | "professional-profiles", requiredAccountType: "business" | "professional"): Access {
+  return async ({ req: { user, payload } }) => {
+    if (isStaff(user)) return true;
+    if (!isNetworkAccount(user)) return false;
+    const accountType = (user as unknown as { accountType?: string }).accountType;
+    if (accountType !== requiredAccountType) return false;
+    const existing = await payload.find({
+      collection,
+      where: { owner: { equals: user.id } },
+      limit: 1,
+      overrideAccess: true,
+    });
+    return existing.totalDocs === 0;
+  };
+}
+
+export const createBusinessProfile: Access = createOwnedProfile("business-profiles", "business");
+export const createProfessionalProfile: Access = createOwnedProfile("professional-profiles", "professional");
+
+/** portfolio-projects has no account-type restriction of its own — any network account may create one, ownership is set server-side. */
 export const createByNetworkAccount: Access = ({ req: { user } }) => isNetworkAccount(user) || isStaff(user);
 
 export const updateOrDeleteByOwnerOrStaff: Access = ({ req: { user } }) => {

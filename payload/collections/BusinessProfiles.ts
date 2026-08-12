@@ -1,5 +1,5 @@
 import type { CollectionConfig } from "payload";
-import { readPublishedOrOwnerOrStaff, createByNetworkAccount, updateOrDeleteByOwnerOrStaff } from "../access-profiles";
+import { readPublishedOrOwnerOrStaff, createBusinessProfile, updateOrDeleteByOwnerOrStaff } from "../access-profiles";
 
 /**
  * Phase 9B — a Business-account's public profile. Owned by exactly one
@@ -23,7 +23,7 @@ export const BusinessProfiles: CollectionConfig = {
   },
   access: {
     read: readPublishedOrOwnerOrStaff,
-    create: createByNetworkAccount,
+    create: createBusinessProfile,
     update: updateOrDeleteByOwnerOrStaff,
     delete: updateOrDeleteByOwnerOrStaff,
   },

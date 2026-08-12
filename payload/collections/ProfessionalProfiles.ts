@@ -1,5 +1,5 @@
 import type { CollectionConfig } from "payload";
-import { readPublishedOrOwnerOrStaff, createByNetworkAccount, updateOrDeleteByOwnerOrStaff } from "../access-profiles";
+import { readPublishedOrOwnerOrStaff, createProfessionalProfile, updateOrDeleteByOwnerOrStaff } from "../access-profiles";
 
 /**
  * Phase 9B — a Professional-account's public profile. Same shape and
@@ -18,7 +18,7 @@ export const ProfessionalProfiles: CollectionConfig = {
   },
   access: {
     read: readPublishedOrOwnerOrStaff,
-    create: createByNetworkAccount,
+    create: createProfessionalProfile,
     update: updateOrDeleteByOwnerOrStaff,
     delete: updateOrDeleteByOwnerOrStaff,
   },

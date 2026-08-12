@@ -28,6 +28,14 @@ Placed under the `(app)` route group — sharing the main marketing site's heade
 
 The technical design's original sketch for `portfolio-projects` considered deriving ownership by following the polymorphic `profile` relationship rather than storing a separate `owner` field, to avoid the redundancy. Implementing it exposed the real question: doing that correctly would mean either (a) a nested-field access-control query into a polymorphic relationship's target document — a mechanism with no precedent anywhere in this codebase, i.e. exactly the kind of thing this project's "verify, don't trust" discipline says not to assume works — or (b) an async `findByID` lookup inside every access check, adding real latency and complexity to a foundation-scope feature. The flat `owner` field is what actually shipped: one extra field, zero new risk, and it also solved a second problem cleanly — anonymous read of `portfolio-projects` is denied outright at the collection level (so a portfolio item can never leak ahead of its owning profile's publish state via a direct API call), with the public profile pages being the sole, already-gated path that surfaces items to a visitor.
 
+## 2.6. Remediation: create access wasn't account-type-aware (post-review fix)
+
+The independent release review ([PHASE9B-RELEASE-REVIEW.md](PHASE9B-RELEASE-REVIEW.md)) found that `create: createByNetworkAccount` on both profile collections only checked "is this any authenticated network account" — not that the account's `accountType` matched the collection, and not that it didn't already own a profile. Live-confirmed via Payload's Local API with the real (non-overridden) access-control path: a Consumer account could create a `business-profiles` document directly through the REST API, bypassing the Server Action's account-type and one-profile-per-account checks entirely (those checks only run in the Server Action's own code path, not at the actual `access.create` enforcement point).
+
+**Fix** (`payload/access-profiles.ts`): `createByNetworkAccount` is replaced by `createBusinessProfile`/`createProfessionalProfile`, each requiring the caller's `accountType` to match the target collection and querying for an existing profile owned by that account before allowing create — closing both the wrong-account-type gap and the multiple-profiles-per-account gap at the access-control layer itself, not just in the UI path. Staff retain unconditional create access for moderation/support. No change to `read`/`update`/`delete` access, which the review found already correct.
+
+**Verified independently**: the same Local API test that originally reproduced the gap (a Consumer account attempting to create a `business-profiles` document with `overrideAccess: false`) now returns an access-denied result instead of succeeding.
+
 ## 3. Standard checks (run from a clean state)
 
 - `tsc --noEmit` — **0 errors**
