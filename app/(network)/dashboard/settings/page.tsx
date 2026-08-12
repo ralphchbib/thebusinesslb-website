@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getNetworkUser } from "@/lib/network/session";
 import { ChangePasswordForm } from "@/components/network/change-password-form";
+import { ChangeEmailForm } from "@/components/network/change-email-form";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -21,6 +22,16 @@ export default async function SettingsPage() {
             <dd className="capitalize text-ink">{user?.accountType}</dd>
           </div>
         </dl>
+      </div>
+
+      <div className="rounded-lg border border-n200 bg-white p-8">
+        <h2 className="font-display text-xl font-medium text-ink">Change email</h2>
+        <p className="mt-1 text-[13px] text-n500">
+          We&rsquo;ll send a confirmation link to your new address before it takes effect.
+        </p>
+        <div className="mt-4">
+          <ChangeEmailForm currentEmail={user?.email ?? ""} />
+        </div>
       </div>
 
       <div className="rounded-lg border border-n200 bg-white p-8">
