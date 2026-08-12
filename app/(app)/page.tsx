@@ -7,6 +7,7 @@ import { TransformationStrip } from "@/components/blocks/transformation-strip";
 import { AssessmentBlock } from "@/components/blocks/assessment-block";
 import { ProcessBlock } from "@/components/blocks/process-block";
 import { FoundingClients } from "@/components/blocks/founding-clients";
+import { NetworkIntro } from "@/components/blocks/network-intro";
 import { SectorGrid } from "@/components/blocks/sector-grid";
 import { FounderBlock } from "@/components/blocks/founder-block";
 import { InsightsRow } from "@/components/blocks/insights-row";
@@ -107,6 +108,7 @@ export default async function Home() {
         trustPoints={home.process.trustPoints}
       />
       <FoundingClients />
+      <NetworkIntro />
       <SectorGrid />
       {/* Desktop-only: founder sits in its normal position 10 */}
       <FounderBlock
