@@ -72,11 +72,11 @@ All performed live against a real running dev server with real (test) accounts c
 
 ## G. Commit Hash
 
-`(to be filled in after commit — see below)`
+`394e89e` (branch `feat/phase9d-member-dashboard`)
 
 ## H. PR URL
 
-`(to be filled in after PR creation — see below)`
+See PR opened against `main` — not merged, per instruction.
 
 ## I. Release Review Recommendation
 
