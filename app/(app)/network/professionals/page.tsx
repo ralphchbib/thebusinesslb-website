@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DirectoryFilterForm } from "@/components/network/directory-filter-form";
 import { Pagination } from "@/components/network/pagination";
+import { VerifiedBadge } from "@/components/network/verified-badge";
 
 export const metadata: Metadata = buildMetadata({
   title: "Professional Directory | THE BUSINESS lb",
@@ -78,7 +79,10 @@ export default async function ProfessionalDirectoryPage({
                   {pro.photoUrl && (
                     <Image src={pro.photoUrl} alt={pro.name} width={48} height={48} className="mb-3 rounded-full" />
                   )}
-                  <h3 className="text-lg font-semibold text-ink">{pro.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-ink">{pro.name}</h3>
+                    {pro.verified && <VerifiedBadge />}
+                  </div>
                   <p className="mt-1 text-sm font-medium text-petrol">{pro.title}</p>
                   <p className="mt-3 flex-1 text-sm leading-relaxed text-n600">{pro.bio}</p>
                   {pro.location && <p className="mt-3 text-[13px] text-n500">📍 {pro.location}</p>}

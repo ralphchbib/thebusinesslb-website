@@ -11,6 +11,7 @@ export interface ProfessionalProfileListItem {
   location?: string;
   languages: string[];
   photoUrl?: string;
+  verified: boolean;
 }
 
 export interface ProfessionalProfileListResult {
@@ -76,6 +77,7 @@ export async function getPublishedProfessionalProfiles(
       location: (doc.location as string) || undefined,
       languages: (doc.languages as string[]) ?? [],
       photoUrl: typeof doc.photo === "object" ? (doc.photo as { url?: string })?.url : undefined,
+      verified: Boolean(doc.verified),
     })),
     page: result.page ?? 1,
     totalPages: result.totalPages ?? 1,

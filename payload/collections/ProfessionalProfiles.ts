@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import { readPublishedOrOwnerOrStaff, createProfessionalProfile, updateOrDeleteByOwnerOrStaff } from "../access-profiles";
+import { staffOnlyTrustField } from "../access-trust";
 import { LANGUAGE_OPTIONS } from "../language-options";
 
 /**
@@ -86,5 +87,17 @@ export const ProfessionalProfiles: CollectionConfig = {
     },
     { name: "contactEmail", type: "text" },
     { name: "contactPhone", type: "text" },
+    {
+      name: "verified",
+      type: "checkbox",
+      defaultValue: false,
+      admin: { description: "Phase 10 — set only by an approved verification-requests document. Never client-editable." },
+      access: { update: staffOnlyTrustField },
+    },
+    {
+      name: "verifiedAt",
+      type: "date",
+      access: { update: staffOnlyTrustField },
+    },
   ],
 };

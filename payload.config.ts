@@ -22,6 +22,10 @@ import { NetworkAccounts } from "@/payload/collections/NetworkAccounts";
 import { BusinessProfiles } from "@/payload/collections/BusinessProfiles";
 import { ProfessionalProfiles } from "@/payload/collections/ProfessionalProfiles";
 import { PortfolioProjects } from "@/payload/collections/PortfolioProjects";
+import { VerificationRequests } from "@/payload/collections/VerificationRequests";
+import { Reviews } from "@/payload/collections/Reviews";
+import { Recommendations } from "@/payload/collections/Recommendations";
+import { ContentReports } from "@/payload/collections/ContentReports";
 import { SiteSettings } from "@/payload/globals/SiteSettings";
 import { Homepage } from "@/payload/globals/Homepage";
 import { siteConfig } from "@/lib/config";
@@ -92,6 +96,10 @@ export default buildConfig({
     BusinessProfiles,
     ProfessionalProfiles,
     PortfolioProjects,
+    VerificationRequests,
+    Reviews,
+    Recommendations,
+    ContentReports,
   ],
   globals: [SiteSettings, Homepage],
   sharp,

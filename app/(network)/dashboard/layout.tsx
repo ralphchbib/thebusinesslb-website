@@ -34,6 +34,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       ? [
           { href: "/dashboard/profile", label: "My Profile" },
           { href: "/dashboard/profile/portfolio", label: "Portfolio" },
+          { href: "/dashboard/verification", label: "Verification" },
+          { href: "/dashboard/reviews", label: "Reviews" },
         ]
       : []),
     { href: "/dashboard/settings", label: "Settings" },
