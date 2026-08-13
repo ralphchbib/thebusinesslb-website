@@ -94,11 +94,11 @@ No existing collection's existing fields, no existing Server Action, and no exis
 
 ## G. Commit Hash
 
-See below (filled in after commit).
+`7579d14` (branch `feat/phase10-trust-verification`)
 
 ## H. PR URL
 
-See PR opened against `main` — not merged, per instruction.
+[https://github.com/ralphchbib/thebusinesslb-website/pull/22](https://github.com/ralphchbib/thebusinesslb-website/pull/22) — not merged, per instruction.
 
 ## I. Release Review Recommendation
 
