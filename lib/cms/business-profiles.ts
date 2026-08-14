@@ -11,6 +11,7 @@ export interface BusinessProfileListItem {
   location?: string;
   languages: string[];
   logoUrl?: string;
+  verified: boolean;
 }
 
 export interface BusinessProfileListResult {
@@ -77,6 +78,7 @@ export async function getPublishedBusinessProfiles(
       location: (doc.location as string) || undefined,
       languages: (doc.languages as string[]) ?? [],
       logoUrl: typeof doc.logo === "object" ? (doc.logo as { url?: string })?.url : undefined,
+      verified: Boolean(doc.verified),
     })),
     page: result.page ?? 1,
     totalPages: result.totalPages ?? 1,

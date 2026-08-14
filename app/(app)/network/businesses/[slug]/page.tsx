@@ -3,11 +3,16 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { getCms } from "@/lib/cms/client";
 import { getNetworkUser } from "@/lib/network/session";
+import { getPublishedReviews, getPublishedRecommendations } from "@/lib/cms/trust";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { breadcrumbSchema } from "@/lib/seo/schema-org";
 import { Breadcrumb } from "@/components/blocks/breadcrumb";
 import { Section } from "@/components/blocks/section";
 import { Badge } from "@/components/ui/badge";
+import { VerifiedBadge } from "@/components/network/verified-badge";
+import { ReviewForm } from "@/components/network/review-form";
+import { RecommendationForm } from "@/components/network/recommendation-form";
+import { ReportContentButton } from "@/components/network/report-content-button";
 
 /**
  * Phase 9B — public business profile. A draft is only visible to its
@@ -74,6 +79,13 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
 
   const languages = (profile.languages as string[]) ?? [];
 
+  const viewer = await getNetworkUser();
+  const isOwner = viewer ? String(viewer.id) === String(ownerId) : false;
+  const [reviews, recommendations] = await Promise.all([
+    getPublishedReviews("business-profiles", profile.id as string | number),
+    getPublishedRecommendations("business-profiles", profile.id as string | number),
+  ]);
+
   return (
     <>
       <script
@@ -103,7 +115,10 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
       <div className="flex items-center gap-4">
         {logo?.url && <Image src={logo.url} alt={logo.alt ?? profile.companyName as string} width={64} height={64} className="rounded-md" />}
         <div>
-          <h1 className="font-display text-3xl font-medium text-ink">{profile.companyName as string}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="font-display text-3xl font-medium text-ink">{profile.companyName as string}</h1>
+            {Boolean(profile.verified) && <VerifiedBadge verifiedAt={profile.verifiedAt as string | undefined} />}
+          </div>
           {(Boolean(profile.industry) || Boolean(profile.category)) && (
             <p className="text-n500">
               {[profile.industry, profile.category].filter(Boolean).join(" · ")}
@@ -170,6 +185,80 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
           </div>
         </div>
       )}
+
+      <div className="mt-10">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-2xl font-medium text-ink">Reviews {reviews.count > 0 && `(${reviews.count})`}</h2>
+          {reviews.averageRating !== null && (
+            <span className="text-[15px] font-medium text-brass">{"★".repeat(Math.round(reviews.averageRating))} {reviews.averageRating.toFixed(1)}</span>
+          )}
+        </div>
+
+        {reviews.items.length === 0 ? (
+          <p className="mt-3 text-[14px] text-n500">No reviews yet.</p>
+        ) : (
+          <div className="mt-4 flex flex-col gap-5">
+            {reviews.items.map((review) => (
+              <div key={review.id} className="rounded-lg border border-n200 bg-white p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-brass">{"★".repeat(review.rating)}</span>
+                    <span className="text-[13px] font-medium text-ink">{review.reviewerName}</span>
+                  </div>
+                  {viewer && !isOwner && <ReportContentButton targetCollection="reviews" targetId={review.id} />}
+                </div>
+                <p className="mt-2 text-[14px] text-n700">{review.body}</p>
+                {review.businessReply && (
+                  <div className="mt-3 rounded-md bg-n100 p-3">
+                    <p className="text-[12px] font-semibold text-n600">Response from {profile.companyName as string}</p>
+                    <p className="mt-1 text-[13px] text-n700">{review.businessReply}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {viewer && !isOwner && (
+          <div className="mt-6 rounded-lg border border-n200 bg-white p-5">
+            <h3 className="text-[15px] font-semibold text-ink">Write a review</h3>
+            <div className="mt-3">
+              <ReviewForm profileType="business-profiles" profileId={profile.id as string | number} />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-10">
+        <h2 className="font-display text-2xl font-medium text-ink">
+          Recommendations {recommendations.count > 0 && `(${recommendations.count})`}
+        </h2>
+
+        {recommendations.items.length === 0 ? (
+          <p className="mt-3 text-[14px] text-n500">No recommendations yet.</p>
+        ) : (
+          <div className="mt-4 flex flex-col gap-5">
+            {recommendations.items.map((rec) => (
+              <div key={rec.id} className="rounded-lg border border-n200 bg-white p-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[13px] font-medium text-ink">{rec.recommenderName}</span>
+                  {viewer && !isOwner && <ReportContentButton targetCollection="recommendations" targetId={rec.id} />}
+                </div>
+                <p className="mt-2 text-[14px] text-n700">{rec.body}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {viewer && !isOwner && (
+          <div className="mt-6 rounded-lg border border-n200 bg-white p-5">
+            <h3 className="text-[15px] font-semibold text-ink">Recommend {profile.companyName as string}</h3>
+            <div className="mt-3">
+              <RecommendationForm profileType="business-profiles" profileId={profile.id as string | number} />
+            </div>
+          </div>
+        )}
+      </div>
       </Section>
     </>
   );

@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import { readPublishedOrOwnerOrStaff, createBusinessProfile, updateOrDeleteByOwnerOrStaff } from "../access-profiles";
+import { staffOnlyTrustField } from "../access-trust";
 import { LANGUAGE_OPTIONS } from "../language-options";
 
 /**
@@ -84,6 +85,18 @@ export const BusinessProfiles: CollectionConfig = {
         { name: "label", type: "text", required: true },
         { name: "url", type: "text", required: true },
       ],
+    },
+    {
+      name: "verified",
+      type: "checkbox",
+      defaultValue: false,
+      admin: { description: "Phase 10 — set only by an approved verification-requests document. Never client-editable." },
+      access: { update: staffOnlyTrustField },
+    },
+    {
+      name: "verifiedAt",
+      type: "date",
+      access: { update: staffOnlyTrustField },
     },
   ],
 };
