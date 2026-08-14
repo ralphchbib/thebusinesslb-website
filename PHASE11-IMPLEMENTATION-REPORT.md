@@ -91,11 +91,11 @@ No existing collection's existing fields, no existing Server Action, and no exis
 
 ## G. Commit Hash
 
-`<filled in after commit>`
+`8f141a7` (branch `feat/phase11-consumer-network`)
 
 ## H. PR URL
 
-`<filled in after PR is opened>`
+[https://github.com/ralphchbib/thebusinesslb-website/pull/23](https://github.com/ralphchbib/thebusinesslb-website/pull/23) — not merged, per instruction.
 
 ## I. Release Review Recommendation
 
