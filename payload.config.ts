@@ -26,6 +26,9 @@ import { VerificationRequests } from "@/payload/collections/VerificationRequests
 import { Reviews } from "@/payload/collections/Reviews";
 import { Recommendations } from "@/payload/collections/Recommendations";
 import { ContentReports } from "@/payload/collections/ContentReports";
+import { SavedProfiles } from "@/payload/collections/SavedProfiles";
+import { Follows } from "@/payload/collections/Follows";
+import { SavedSearches } from "@/payload/collections/SavedSearches";
 import { SiteSettings } from "@/payload/globals/SiteSettings";
 import { Homepage } from "@/payload/globals/Homepage";
 import { siteConfig } from "@/lib/config";
@@ -100,6 +103,9 @@ export default buildConfig({
     Reviews,
     Recommendations,
     ContentReports,
+    SavedProfiles,
+    Follows,
+    SavedSearches,
   ],
   globals: [SiteSettings, Homepage],
   sharp,

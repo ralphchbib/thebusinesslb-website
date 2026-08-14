@@ -13,6 +13,9 @@ import { VerifiedBadge } from "@/components/network/verified-badge";
 import { ReviewForm } from "@/components/network/review-form";
 import { RecommendationForm } from "@/components/network/recommendation-form";
 import { ReportContentButton } from "@/components/network/report-content-button";
+import { SaveButton } from "@/components/network/save-button";
+import { FollowButton } from "@/components/network/follow-button";
+import { isProfileSaved, isProfileFollowed, getFollowerCount } from "@/lib/network/social";
 
 async function getProfile(slug: string) {
   const payload = await getCms();
@@ -71,9 +74,12 @@ export default async function ProfessionalProfilePage({ params }: { params: Prom
 
   const viewer = await getNetworkUser();
   const isOwner = viewer ? String(viewer.id) === String(ownerId) : false;
-  const [reviews, recommendations] = await Promise.all([
+  const [reviews, recommendations, isSaved, isFollowing, followerCount] = await Promise.all([
     getPublishedReviews("professional-profiles", profile.id as string | number),
     getPublishedRecommendations("professional-profiles", profile.id as string | number),
+    viewer ? isProfileSaved(viewer.id, "professional-profiles", profile.id as string | number) : Promise.resolve(false),
+    viewer && !isOwner ? isProfileFollowed(viewer.id, "professional-profiles", profile.id as string | number) : Promise.resolve(false),
+    isOwner ? getFollowerCount("professional-profiles", profile.id as string | number) : Promise.resolve(null),
   ]);
 
   return (
@@ -102,17 +108,30 @@ export default async function ProfessionalProfilePage({ params }: { params: Prom
         </div>
       )}
 
-      <div className="flex items-center gap-4">
-        {photo?.url && <Image src={photo.url} alt={photo.alt ?? profile.name as string} width={64} height={64} className="rounded-full" />}
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-display text-3xl font-medium text-ink">{profile.name as string}</h1>
-            {Boolean(profile.verified) && <VerifiedBadge verifiedAt={profile.verifiedAt as string | undefined} />}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-4">
+          {photo?.url && <Image src={photo.url} alt={photo.alt ?? profile.name as string} width={64} height={64} className="rounded-full" />}
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="font-display text-3xl font-medium text-ink">{profile.name as string}</h1>
+              {Boolean(profile.verified) && <VerifiedBadge verifiedAt={profile.verifiedAt as string | undefined} />}
+            </div>
+            <p className="text-n500">
+              {[profile.title, profile.category].filter(Boolean).join(" · ")}
+            </p>
+            {isOwner && followerCount !== null && (
+              <p className="mt-1 text-[13px] text-n500">
+                {followerCount} {followerCount === 1 ? "person follows" : "people follow"} your profile
+              </p>
+            )}
           </div>
-          <p className="text-n500">
-            {[profile.title, profile.category].filter(Boolean).join(" · ")}
-          </p>
         </div>
+        {viewer && (
+          <div className="flex flex-none items-center gap-2">
+            <SaveButton profileType="professional-profiles" profileId={profile.id as string | number} initiallySaved={isSaved} />
+            {!isOwner && <FollowButton profileType="professional-profiles" profileId={profile.id as string | number} initiallyFollowing={isFollowing} />}
+          </div>
+        )}
       </div>
 
       <p className="mt-6 max-w-2xl text-[17px] leading-relaxed text-n700">{profile.bio as string}</p>

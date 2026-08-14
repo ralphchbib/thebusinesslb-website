@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getPublishedProfessionalProfiles } from "@/lib/cms/professional-profiles";
+import { getNetworkUser } from "@/lib/network/session";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { breadcrumbSchema } from "@/lib/seo/schema-org";
 import { Breadcrumb } from "@/components/blocks/breadcrumb";
@@ -11,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { DirectoryFilterForm } from "@/components/network/directory-filter-form";
 import { Pagination } from "@/components/network/pagination";
 import { VerifiedBadge } from "@/components/network/verified-badge";
+import { SaveSearchButton } from "@/components/network/save-search-button";
 
 export const metadata: Metadata = buildMetadata({
   title: "Professional Directory | THE BUSINESS lb",
@@ -35,6 +37,7 @@ export default async function ProfessionalDirectoryPage({
 }) {
   const sp = await searchParams;
   const page = Number(sp.page) > 0 ? Number(sp.page) : 1;
+  const viewer = await getNetworkUser();
 
   const result = await getPublishedProfessionalProfiles({
     page,
@@ -68,6 +71,12 @@ export default async function ProfessionalDirectoryPage({
 
       <Section surface="mist">
         <DirectoryFilterForm basePath="/network/professionals" type="professional" values={sp} />
+        {viewer && (
+          <SaveSearchButton
+            profileType="professional"
+            filters={{ q: sp.q, skill: sp.skill, category: sp.category, location: sp.location, service: sp.service, language: sp.language }}
+          />
+        )}
 
         {result.docs.length === 0 ? (
           <p className="mt-8 text-[15px] text-n500">No professionals match these filters yet.</p>

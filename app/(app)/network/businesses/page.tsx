@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getPublishedBusinessProfiles } from "@/lib/cms/business-profiles";
+import { getNetworkUser } from "@/lib/network/session";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { breadcrumbSchema } from "@/lib/seo/schema-org";
 import { Breadcrumb } from "@/components/blocks/breadcrumb";
@@ -11,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { DirectoryFilterForm } from "@/components/network/directory-filter-form";
 import { Pagination } from "@/components/network/pagination";
 import { VerifiedBadge } from "@/components/network/verified-badge";
+import { SaveSearchButton } from "@/components/network/save-search-button";
 
 export const metadata: Metadata = buildMetadata({
   title: "Business Directory | THE BUSINESS lb",
@@ -35,6 +37,7 @@ export default async function BusinessDirectoryPage({
 }) {
   const sp = await searchParams;
   const page = Number(sp.page) > 0 ? Number(sp.page) : 1;
+  const viewer = await getNetworkUser();
 
   const result = await getPublishedBusinessProfiles({
     page,
@@ -68,6 +71,12 @@ export default async function BusinessDirectoryPage({
 
       <Section surface="mist">
         <DirectoryFilterForm basePath="/network/businesses" type="business" values={sp} />
+        {viewer && (
+          <SaveSearchButton
+            profileType="business"
+            filters={{ q: sp.q, industry: sp.industry, category: sp.category, location: sp.location, service: sp.service, language: sp.language }}
+          />
+        )}
 
         {result.docs.length === 0 ? (
           <p className="mt-8 text-[15px] text-n500">No businesses match these filters yet.</p>
