@@ -20,6 +20,13 @@ import { DashboardNav } from "@/components/network/dashboard-nav";
  * every other account type keeps the same Overview + Settings it already
  * had — Consumer/Institution/Diaspora dashboards are explicitly out of
  * this phase's scope (PHASE9D-TECHNICAL-DESIGN.md §B).
+ *
+ * Phase 11 — Saved/Following/Saved Searches are added as a third,
+ * universal group, available to every account type regardless of the
+ * `hasProfile` branch above (PHASE11-TECHNICAL-DESIGN.md §C): nothing in
+ * the access-control model or the Blueprint restricts saving/following to
+ * consumer accounts specifically, and one shared mechanism is simpler
+ * than a second, parallel "Consumer Dashboard" nav model.
  */
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getNetworkUser();
@@ -38,6 +45,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
           { href: "/dashboard/reviews", label: "Reviews" },
         ]
       : []),
+    { href: "/dashboard/saved", label: "Saved" },
+    { href: "/dashboard/following", label: "Following" },
+    { href: "/dashboard/saved-searches", label: "Saved Searches" },
     { href: "/dashboard/settings", label: "Settings" },
   ];
 

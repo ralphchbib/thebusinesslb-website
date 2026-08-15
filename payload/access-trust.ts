@@ -18,7 +18,13 @@ import { isStaff, isNetworkAccount } from "./access-network";
 
 type PolymorphicRef = { relationTo?: string; value?: string | number } | null | undefined;
 
-async function getProfileOwnerId(
+/**
+ * Exported (Phase 11) so payload/access-social.ts can reuse this exact,
+ * already-proven resolution instead of duplicating it — self-follow
+ * prevention needs the identical "who really owns this target profile"
+ * check that self-review/self-recommendation already established here.
+ */
+export async function getProfileOwnerId(
   payload: { findByID: (args: { collection: "business-profiles" | "professional-profiles"; id: string | number; depth: number; overrideAccess: boolean }) => Promise<unknown> },
   profile: PolymorphicRef,
 ): Promise<string | null> {
