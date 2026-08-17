@@ -50,6 +50,7 @@ export type NetworkUser = {
   accountType: "business" | "professional" | "consumer" | "institution" | "diaspora";
   diasporaCountry?: string | null;
   status: "active" | "suspended";
+  messageEmailNotifications?: boolean;
 };
 
 /**

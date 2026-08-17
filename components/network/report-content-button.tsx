@@ -10,7 +10,7 @@ import { contentReportReasons } from "@/lib/validation/trust-schemas";
 const initialState: TrustFormState = { status: "idle" };
 
 /** Only rendered for logged-in accounts — the page checks this before mounting the component, matching the design's "reporting requires login" rule. */
-export function ReportContentButton({ targetCollection, targetId }: { targetCollection: "reviews" | "recommendations"; targetId: string | number }) {
+export function ReportContentButton({ targetCollection, targetId }: { targetCollection: "reviews" | "recommendations" | "messages"; targetId: string | number }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(reportContentAction, initialState);
 

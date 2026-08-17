@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 interface NavItem {
   href: string;
   label: string;
+  badge?: number;
 }
 
 /**
@@ -31,11 +32,14 @@ export function DashboardNav({ items }: { items: NavItem[] }) {
             key={item.href}
             href={item.href}
             className={cn(
-              "rounded-md px-3.5 py-2.5 text-[14px] font-medium transition-colors",
+              "flex items-center justify-between rounded-md px-3.5 py-2.5 text-[14px] font-medium transition-colors",
               active ? "bg-petrol-tint text-petrol" : "text-n600 hover:bg-n100 hover:text-ink",
             )}
           >
             {item.label}
+            {Boolean(item.badge) && (
+              <span className="rounded-full bg-petrol px-2 py-0.5 text-[11px] font-semibold text-white">{item.badge}</span>
+            )}
           </Link>
         );
       })}

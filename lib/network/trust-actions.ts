@@ -270,7 +270,7 @@ export async function reportContentAction(
 
   const targetCollection = String(formData.get("targetCollection") ?? "");
   const targetId = String(formData.get("targetId") ?? "");
-  if (targetCollection !== "reviews" && targetCollection !== "recommendations") {
+  if (targetCollection !== "reviews" && targetCollection !== "recommendations" && targetCollection !== "messages") {
     return { status: "error", message: "Something went wrong. Please try again." };
   }
 

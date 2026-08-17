@@ -7,6 +7,12 @@ import { createContentReport, staffOnlyRead, staffOnlyUpdate } from "../access-t
  * through /admin by staff (not queried from app code), so — unlike
  * Reviews/Recommendations — there's no need for a derived plain-field key
  * to sidestep polymorphic-field query limitations here.
+ *
+ * Phase 12 — `target.relationTo` extended to include `messages`, reusing
+ * this exact collection for message reports rather than creating a
+ * near-duplicate `MessageReports` (PHASE12-MESSAGING-NETWORKING-TECHNICAL-DESIGN.md
+ * §F/§J) — the same "one shared reporting collection" reasoning above,
+ * now proven out a second time.
  */
 export const ContentReports: CollectionConfig = {
   slug: "content-reports",
@@ -32,7 +38,7 @@ export const ContentReports: CollectionConfig = {
     {
       name: "target",
       type: "relationship",
-      relationTo: ["reviews", "recommendations"],
+      relationTo: ["reviews", "recommendations", "messages"],
       required: true,
     },
     {

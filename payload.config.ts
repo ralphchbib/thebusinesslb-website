@@ -29,6 +29,9 @@ import { ContentReports } from "@/payload/collections/ContentReports";
 import { SavedProfiles } from "@/payload/collections/SavedProfiles";
 import { Follows } from "@/payload/collections/Follows";
 import { SavedSearches } from "@/payload/collections/SavedSearches";
+import { Connections } from "@/payload/collections/Connections";
+import { Conversations } from "@/payload/collections/Conversations";
+import { Messages } from "@/payload/collections/Messages";
 import { SiteSettings } from "@/payload/globals/SiteSettings";
 import { Homepage } from "@/payload/globals/Homepage";
 import { siteConfig } from "@/lib/config";
@@ -106,6 +109,9 @@ export default buildConfig({
     SavedProfiles,
     Follows,
     SavedSearches,
+    Connections,
+    Conversations,
+    Messages,
   ],
   globals: [SiteSettings, Homepage],
   sharp,

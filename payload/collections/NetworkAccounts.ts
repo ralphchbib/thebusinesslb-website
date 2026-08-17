@@ -160,5 +160,13 @@ export const NetworkAccounts: CollectionConfig = {
         description: "Suspended accounts cannot log in. Groundwork for Phase 9's reactive-moderation model.",
       },
     },
+    {
+      name: "messageEmailNotifications",
+      type: "checkbox",
+      defaultValue: true,
+      admin: {
+        description: "Phase 12 — Blueprint §56: \"Users must control communications and notifications.\" Gates the new-message email only; owner-editable via /dashboard/settings.",
+      },
+    },
   ],
 };
