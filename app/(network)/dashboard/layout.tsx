@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getNetworkUser } from "@/lib/network/session";
 import { logoutAction } from "@/lib/network/actions";
+import { getUnreadMessageCount } from "@/lib/network/messaging";
 import { Button } from "@/components/ui/button";
 import { DashboardNav } from "@/components/network/dashboard-nav";
 
@@ -27,6 +28,14 @@ import { DashboardNav } from "@/components/network/dashboard-nav";
  * the access-control model or the Blueprint restricts saving/following to
  * consumer accounts specifically, and one shared mechanism is simpler
  * than a second, parallel "Consumer Dashboard" nav model.
+ *
+ * Phase 12 — Connections and Messages are added as a fourth universal
+ * group, same reasoning as Phase 11's. The Messages route is labeled
+ * "Inbox" for Business accounts specifically
+ * (PHASE12-MESSAGING-NETWORKING-TECHNICAL-DESIGN.md §B/§38 — Blueprint's
+ * own SaaS Dashboard Structure lists "Messages" for Professional/Consumer
+ * but "Leads"/"Customers" for Business; the underlying data and route are
+ * identical, only the label differs) — everything else is unchanged.
  */
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getNetworkUser();
@@ -35,6 +44,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   const hasProfile = user.accountType === "business" || user.accountType === "professional";
+  const unreadCount = await getUnreadMessageCount(user.id);
   const navItems = [
     { href: "/dashboard", label: "Overview" },
     ...(hasProfile
@@ -48,6 +58,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     { href: "/dashboard/saved", label: "Saved" },
     { href: "/dashboard/following", label: "Following" },
     { href: "/dashboard/saved-searches", label: "Saved Searches" },
+    { href: "/dashboard/connections", label: "Connections" },
+    { href: "/dashboard/messages", label: user.accountType === "business" ? "Inbox" : "Messages", badge: unreadCount },
     { href: "/dashboard/settings", label: "Settings" },
   ];
 

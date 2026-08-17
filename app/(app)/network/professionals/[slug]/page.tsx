@@ -15,7 +15,9 @@ import { RecommendationForm } from "@/components/network/recommendation-form";
 import { ReportContentButton } from "@/components/network/report-content-button";
 import { SaveButton } from "@/components/network/save-button";
 import { FollowButton } from "@/components/network/follow-button";
+import { ConnectButton, ConnectionStatusNote } from "@/components/network/connect-button";
 import { isProfileSaved, isProfileFollowed, getFollowerCount } from "@/lib/network/social";
+import { getConnectionState } from "@/lib/network/messaging";
 
 async function getProfile(slug: string) {
   const payload = await getCms();
@@ -74,12 +76,13 @@ export default async function ProfessionalProfilePage({ params }: { params: Prom
 
   const viewer = await getNetworkUser();
   const isOwner = viewer ? String(viewer.id) === String(ownerId) : false;
-  const [reviews, recommendations, isSaved, isFollowing, followerCount] = await Promise.all([
+  const [reviews, recommendations, isSaved, isFollowing, followerCount, connectionState] = await Promise.all([
     getPublishedReviews("professional-profiles", profile.id as string | number),
     getPublishedRecommendations("professional-profiles", profile.id as string | number),
     viewer ? isProfileSaved(viewer.id, "professional-profiles", profile.id as string | number) : Promise.resolve(false),
     viewer && !isOwner ? isProfileFollowed(viewer.id, "professional-profiles", profile.id as string | number) : Promise.resolve(false),
     isOwner ? getFollowerCount("professional-profiles", profile.id as string | number) : Promise.resolve(null),
+    viewer && !isOwner && ownerId !== undefined ? getConnectionState(viewer.id, ownerId as string | number) : Promise.resolve(null),
   ]);
 
   return (
@@ -133,6 +136,16 @@ export default async function ProfessionalProfilePage({ params }: { params: Prom
           </div>
         )}
       </div>
+
+      {viewer && !isOwner && (
+        <div className="mt-4">
+          {connectionState ? (
+            <ConnectionStatusNote status={connectionState.status} requestedByViewer={connectionState.requestedByViewer} />
+          ) : (
+            ownerId !== undefined && <ConnectButton targetAccountId={ownerId as string | number} />
+          )}
+        </div>
+      )}
 
       <p className="mt-6 max-w-2xl text-[17px] leading-relaxed text-n700">{profile.bio as string}</p>
 

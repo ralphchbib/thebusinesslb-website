@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getNetworkUser } from "@/lib/network/session";
 import { ChangePasswordForm } from "@/components/network/change-password-form";
 import { ChangeEmailForm } from "@/components/network/change-email-form";
+import { NotificationSettingsForm } from "@/components/network/notification-settings-form";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -38,6 +39,13 @@ export default async function SettingsPage() {
         <h2 className="font-display text-xl font-medium text-ink">Change password</h2>
         <div className="mt-4">
           <ChangePasswordForm />
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-n200 bg-white p-8">
+        <h2 className="font-display text-xl font-medium text-ink">Notifications</h2>
+        <div className="mt-4">
+          <NotificationSettingsForm initiallyEnabled={user?.messageEmailNotifications !== false} />
         </div>
       </div>
     </div>
