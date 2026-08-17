@@ -107,8 +107,8 @@ All Phase 12 test data (2 network accounts, 1 business profile, 1 professional p
 
 ## I. Commit Hash
 
-_Filled in after commit._
+`6012d7d` (branch `feat/phase12-messaging-networking`)
 
 ## J. PR URL
 
-_Filled in after PR is opened. Not merged, per instruction — merge/deploy requires separate, explicit authorization._
+[https://github.com/ralphchbib/thebusinesslb-website/pull/24](https://github.com/ralphchbib/thebusinesslb-website/pull/24) — not merged, per instruction.
