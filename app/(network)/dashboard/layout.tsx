@@ -36,6 +36,11 @@ import { DashboardNav } from "@/components/network/dashboard-nav";
  * own SaaS Dashboard Structure lists "Messages" for Professional/Consumer
  * but "Leads"/"Customers" for Business; the underlying data and route are
  * identical, only the label differs) — everything else is unchanged.
+ *
+ * Phase 13 — Opportunities is added as a fifth universal item, same
+ * reasoning: nothing in the access-control model or the Blueprint
+ * restricts posting an Offer/Need to a particular account type
+ * (PHASE13-TECHNICAL-DESIGN.md §H).
  */
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getNetworkUser();
@@ -60,6 +65,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     { href: "/dashboard/saved-searches", label: "Saved Searches" },
     { href: "/dashboard/connections", label: "Connections" },
     { href: "/dashboard/messages", label: user.accountType === "business" ? "Inbox" : "Messages", badge: unreadCount },
+    { href: "/dashboard/opportunities", label: "Opportunities" },
     { href: "/dashboard/settings", label: "Settings" },
   ];
 

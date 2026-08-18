@@ -21,6 +21,15 @@ import { readOwnConnection, createConnection, respondToConnection, denyDelete } 
  * requesting A while A's request to B is still pending), not just a
  * literal duplicate in the same direction. `requestedBy` is untouched by
  * the normalization and is the only field that says who actually asked.
+ *
+ * Phase 13 — `originPosting` (nullable) records provenance when a
+ * connection was created by responding to a `market-postings` listing
+ * (Blueprint §18) rather than a direct profile Connect. Everything else
+ * about the connection — the (accountA, accountB) uniqueness constraint,
+ * accept/decline, self-connect prevention, conversation auto-creation on
+ * accept — is unchanged and applies identically either way
+ * (PHASE13-TECHNICAL-DESIGN.md §H: "everything downstream is inherited
+ * unmodified").
  */
 export const Connections: CollectionConfig = {
   slug: "connections",
@@ -105,5 +114,11 @@ export const Connections: CollectionConfig = {
       ],
     },
     { name: "respondedAt", type: "date" },
+    {
+      name: "originPosting",
+      type: "relationship",
+      relationTo: "market-postings",
+      admin: { description: "Phase 13 — set when this connection came from responding to a Market Posting rather than a direct profile Connect. Null otherwise." },
+    },
   ],
 };
