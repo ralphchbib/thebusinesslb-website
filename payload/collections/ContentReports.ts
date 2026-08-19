@@ -13,6 +13,11 @@ import { createContentReport, staffOnlyRead, staffOnlyUpdate } from "../access-t
  * near-duplicate `MessageReports` (PHASE12-MESSAGING-NETWORKING-TECHNICAL-DESIGN.md
  * §F/§J) — the same "one shared reporting collection" reasoning above,
  * now proven out a second time.
+ *
+ * Phase 13 — `target.relationTo` extended again to include
+ * `market-postings` (PHASE13-TECHNICAL-DESIGN.md §I/§J), the same
+ * precedent proven out a third time rather than a near-duplicate
+ * `PostingReports`.
  */
 export const ContentReports: CollectionConfig = {
   slug: "content-reports",
@@ -38,7 +43,7 @@ export const ContentReports: CollectionConfig = {
     {
       name: "target",
       type: "relationship",
-      relationTo: ["reviews", "recommendations", "messages"],
+      relationTo: ["reviews", "recommendations", "messages", "market-postings"],
       required: true,
     },
     {

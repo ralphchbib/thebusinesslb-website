@@ -270,7 +270,14 @@ export async function reportContentAction(
 
   const targetCollection = String(formData.get("targetCollection") ?? "");
   const targetId = String(formData.get("targetId") ?? "");
-  if (targetCollection !== "reviews" && targetCollection !== "recommendations" && targetCollection !== "messages") {
+  // Phase 13 — "market-postings" added to the allowlist (PHASE13-REVIEW-REMEDIATION-PLAN.md §4), matching the
+  // same set ContentReports.target.relationTo already accepts at the schema level.
+  if (
+    targetCollection !== "reviews" &&
+    targetCollection !== "recommendations" &&
+    targetCollection !== "messages" &&
+    targetCollection !== "market-postings"
+  ) {
     return { status: "error", message: "Something went wrong. Please try again." };
   }
 

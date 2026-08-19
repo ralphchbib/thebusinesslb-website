@@ -32,6 +32,7 @@ import { SavedSearches } from "@/payload/collections/SavedSearches";
 import { Connections } from "@/payload/collections/Connections";
 import { Conversations } from "@/payload/collections/Conversations";
 import { Messages } from "@/payload/collections/Messages";
+import { MarketPostings } from "@/payload/collections/MarketPostings";
 import { SiteSettings } from "@/payload/globals/SiteSettings";
 import { Homepage } from "@/payload/globals/Homepage";
 import { siteConfig } from "@/lib/config";
@@ -112,6 +113,7 @@ export default buildConfig({
     Connections,
     Conversations,
     Messages,
+    MarketPostings,
   ],
   globals: [SiteSettings, Homepage],
   sharp,
