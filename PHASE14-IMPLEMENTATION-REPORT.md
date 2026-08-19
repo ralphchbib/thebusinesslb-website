@@ -104,7 +104,7 @@ Same four pre-existing, unrelated tests every prior phase's report notes — no 
 
 ## G. Commit Hash
 
-`(filled in after commit — see below)`
+`0a678e0a3373eb27f913d585752582e0a25e67ce`
 
 ## H. PR URL
 
