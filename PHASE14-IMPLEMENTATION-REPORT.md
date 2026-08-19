@@ -108,7 +108,7 @@ Same four pre-existing, unrelated tests every prior phase's report notes — no 
 
 ## H. PR URL
 
-`(filled in after PR creation — see below)`
+[https://github.com/ralphchbib/thebusinesslb-website/pull/26](https://github.com/ralphchbib/thebusinesslb-website/pull/26)
 
 ## I. Release Review Recommendation
 
