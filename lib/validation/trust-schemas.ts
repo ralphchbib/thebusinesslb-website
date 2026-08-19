@@ -27,3 +27,9 @@ export const contentReportSchema = z.object({
   note: z.string().trim().max(500, "Keep it under 500 characters.").optional(),
 });
 export type ContentReportInput = z.infer<typeof contentReportSchema>;
+
+/** Phase 14 — Blueprint §56 #10: "Complaints and appeals require fair, documented procedures." */
+export const appealSchema = z.object({
+  statement: z.string().trim().min(20, "Explain why you're appealing — at least 20 characters.").max(2000, "Keep it under 2000 characters."),
+});
+export type AppealInput = z.infer<typeof appealSchema>;

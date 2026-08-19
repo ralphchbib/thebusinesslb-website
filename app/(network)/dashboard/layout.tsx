@@ -41,6 +41,10 @@ import { DashboardNav } from "@/components/network/dashboard-nav";
  * reasoning: nothing in the access-control model or the Blueprint
  * restricts posting an Offer/Need to a particular account type
  * (PHASE13-TECHNICAL-DESIGN.md §H).
+ *
+ * Phase 14 — Account Standing is added as a sixth universal item: any
+ * account type can file a report or be the subject of a moderation case
+ * (PHASE14-TECHNICAL-DESIGN.md §E).
  */
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getNetworkUser();
@@ -66,6 +70,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     { href: "/dashboard/connections", label: "Connections" },
     { href: "/dashboard/messages", label: user.accountType === "business" ? "Inbox" : "Messages", badge: unreadCount },
     { href: "/dashboard/opportunities", label: "Opportunities" },
+    { href: "/dashboard/standing", label: "Account Standing" },
     { href: "/dashboard/settings", label: "Settings" },
   ];
 

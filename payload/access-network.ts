@@ -18,7 +18,15 @@ import type { Access, FieldAccess } from "payload";
 // staff/network-account distinction applies to profile ownership checks.
 export function isStaff(user: unknown): boolean {
   const u = user as { collection?: string; role?: string } | null | undefined;
-  return Boolean(u && u.collection === "users" && (u.role === "admin" || u.role === "editor"));
+  // Phase 14 — `moderator` added alongside admin/editor. All three are
+  // internal Payload back-office accounts (never a public network account),
+  // so the existing "staff bypasses ownership checks" model extends to it
+  // unchanged — a moderator reviewing a reported review/posting/message
+  // needs to be able to read it the same way editor already can. Narrower,
+  // moderation-specific restrictions (e.g. editor excluded from the new
+  // moderation collections) are enforced separately in
+  // payload/access-moderation.ts, not by tightening this shared check.
+  return Boolean(u && u.collection === "users" && (u.role === "admin" || u.role === "editor" || u.role === "moderator"));
 }
 
 export function isNetworkAccount(user: unknown): user is { collection: string; id: string } {

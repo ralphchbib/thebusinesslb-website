@@ -1,6 +1,14 @@
 import type { CollectionConfig } from "payload";
 import { createContentReport, staffOnlyRead, staffOnlyUpdate } from "../access-trust";
 
+/** Per-collection field to snapshot as evidence — PHASE14-TECHNICAL-DESIGN.md §G: a moderator must see what was actually reported, even if the content is later edited or deleted. */
+const SNAPSHOT_FIELDS: Record<string, string[]> = {
+  reviews: ["rating", "body"],
+  recommendations: ["body"],
+  messages: ["body"],
+  "market-postings": ["title", "description"],
+};
+
 /**
  * Phase 10 — one shared reporting collection for both Reviews and
  * Recommendations, rather than two near-duplicate ones. Managed entirely
@@ -18,6 +26,13 @@ import { createContentReport, staffOnlyRead, staffOnlyUpdate } from "../access-t
  * `market-postings` (PHASE13-TECHNICAL-DESIGN.md §I/§J), the same
  * precedent proven out a third time rather than a near-duplicate
  * `PostingReports`.
+ *
+ * Phase 14 — a report is no longer the end of the line. `beforeChange`
+ * below finds-or-creates a `ModerationCases` row for this exact target
+ * (merging duplicate reports on the same thing into one case, per
+ * PHASE14-TECHNICAL-DESIGN.md §D.1) and captures a point-in-time
+ * `contentSnapshot` so a moderator can still see what was reported even
+ * if the content is edited or deleted before the case is reviewed.
  */
 export const ContentReports: CollectionConfig = {
   slug: "content-reports",
@@ -61,5 +76,55 @@ export const ContentReports: CollectionConfig = {
     { name: "note", type: "textarea" },
     { name: "resolved", type: "checkbox", defaultValue: false },
     { name: "resolvedBy", type: "relationship", relationTo: "users" },
+    { name: "case", type: "relationship", relationTo: "moderation-cases", access: { update: () => false }, admin: { description: "Set automatically — merges with any other open case on the same target." } },
+    { name: "contentSnapshot", type: "json", access: { update: () => false }, admin: { description: "Point-in-time copy of the reported content, taken when this report was filed." } },
   ],
+  hooks: {
+    beforeChange: [
+      async ({ data, operation, req }) => {
+        if (operation !== "create") return data;
+        const target = data.target as { relationTo?: string; value?: unknown } | undefined;
+        if (!target?.relationTo || target.value == null) return data;
+
+        const fields = SNAPSHOT_FIELDS[target.relationTo];
+        if (fields) {
+          const doc = (await req.payload.findByID({ collection: target.relationTo, id: target.value as string | number, depth: 0, overrideAccess: true }).catch(() => null)) as
+            | Record<string, unknown>
+            | null;
+          if (doc) {
+            data.contentSnapshot = Object.fromEntries(fields.map((f) => [f, doc[f]]));
+          }
+        }
+
+        const targetKey = `${target.relationTo}:${target.value}`;
+        // `req` forwarded to both calls below so the case this report links
+        // to (found or newly created) is visible within the same
+        // transaction as this report's own insert — same gotcha
+        // VerificationRequests.ts's nested write already documents; omitting
+        // it here causes an FK violation on `content_reports.case_id`.
+        const openCase = await req.payload.find({
+          collection: "moderation-cases",
+          where: { and: [{ targetKey: { equals: targetKey } }, { status: { in: ["open", "investigating", "escalated"] } }] },
+          limit: 1,
+          overrideAccess: true,
+          req,
+        });
+
+        const existing = openCase.docs[0];
+        if (existing) {
+          data.case = existing.id;
+        } else {
+          const created = await req.payload.create({
+            collection: "moderation-cases",
+            data: { target, status: "open" },
+            overrideAccess: true,
+            req,
+          });
+          data.case = created.id;
+        }
+
+        return data;
+      },
+    ],
+  },
 };
