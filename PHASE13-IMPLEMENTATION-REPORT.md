@@ -130,7 +130,7 @@ npm test
 
 ## G. Commit Hash
 
-To be filled in after this remediation is committed to `feat/phase13-market-connections`.
+`6b38734cdc04f79a558cb45dd1564c3077fba527` — pushed to `feat/phase13-market-connections`.
 
 ## H. PR URL
 
