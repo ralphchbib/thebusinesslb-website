@@ -11,10 +11,15 @@ import { Section } from "@/components/blocks/section";
 import { Badge } from "@/components/ui/badge";
 import { RespondToPostingButton } from "@/components/network/respond-to-posting-button";
 import { ConnectionStatusNote } from "@/components/network/connect-button";
+import { ReportContentButton } from "@/components/network/report-content-button";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const posting = await getPostingById(id);
+  // PHASE13-RELEASE-REVIEW.md Risk #3 — pass the viewer through so a non-active
+  // posting's own owner still gets a real <title> instead of the generic
+  // site fallback `getPostingById` would otherwise return for them too.
+  const viewer = await getNetworkUser();
+  const posting = await getPostingById(id, viewer?.id);
   if (!posting) return {};
   return buildMetadata({
     title: `${posting.title} | THE BUSINESS lb`,
@@ -111,6 +116,12 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             <RespondToPostingButton postingId={posting.id} />
           )}
         </div>
+
+        {viewer && !isOwner && (
+          <div className="mt-4">
+            <ReportContentButton targetCollection="market-postings" targetId={posting.id} />
+          </div>
+        )}
       </Section>
     </>
   );

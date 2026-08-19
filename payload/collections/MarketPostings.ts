@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
-import { readPostings, createPosting, updateOwnPosting, denyDelete } from "../access-market";
+import { readPostings, createPosting, updateOwnPosting, statusTransitionFieldAccess, deleteOwnPosting } from "../access-market";
+import { noUpdateAfterCreate } from "../access-trust";
 
 /**
  * Phase 13 — Blueprint §18 "Offer and Need Exchange" (PHASE13-TECHNICAL-
@@ -20,6 +21,15 @@ import { readPostings, createPosting, updateOwnPosting, denyDelete } from "../ac
  * collection's new `originPosting` field), reusing Phase 12's entire
  * mutual-approval, reason/value/outcome, accept-creates-conversation
  * pipeline wholesale rather than building a parallel one.
+ *
+ * PHASE13-RELEASE-REVIEW.md Risk #1 / PHASE13-REVIEW-REMEDIATION-PLAN.md
+ * §3 — `owner` and `status` carry field-level `access.update` guards on
+ * top of the collection-level `updateOwnPosting` check, matching
+ * `Reviews.ts`'s `noUpdateAfterCreate`/`staffOnlyTrustField` pattern:
+ * without them, an authenticated owner could reassign a posting's `owner`
+ * (a public impersonation vector) or reopen a closed/fulfilled posting via
+ * a direct API call, neither of which the Server Actions ever intend to
+ * allow but neither of which the document-level check alone prevents.
  */
 export const MarketPostings: CollectionConfig = {
   slug: "market-postings",
@@ -33,7 +43,7 @@ export const MarketPostings: CollectionConfig = {
     read: readPostings,
     create: createPosting,
     update: updateOwnPosting,
-    delete: denyDelete,
+    delete: deleteOwnPosting,
   },
   fields: [
     {
@@ -41,7 +51,8 @@ export const MarketPostings: CollectionConfig = {
       type: "relationship",
       relationTo: "network-accounts",
       required: true,
-      admin: { description: "Set once at creation from the logged-in account. Never client-editable after." },
+      admin: { description: "Set once at creation from the logged-in account. Never client-editable after — enforced by noUpdateAfterCreate, not just this comment." },
+      access: { update: noUpdateAfterCreate },
     },
     {
       name: "postingType",
@@ -70,6 +81,7 @@ export const MarketPostings: CollectionConfig = {
         { label: "Closed", value: "closed" },
       ],
       admin: { description: "Only 'active' postings appear in public browse/discovery." },
+      access: { update: statusTransitionFieldAccess },
     },
     {
       name: "expiresAt",

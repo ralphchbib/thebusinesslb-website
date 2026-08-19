@@ -118,12 +118,15 @@ export async function getPostingById(id: string | number, viewerId?: string | nu
   };
 }
 
-/** Dashboard "My Postings" — owner's postings in every status, newest first. */
-export async function getOwnPostings(ownerId: string | number): Promise<MarketPostingListItem[]> {
+/** Dashboard "My Postings" — owner's postings, newest first. `status` narrows to one status (the "Filter By Status" control); omitted, every status is returned. */
+export async function getOwnPostings(ownerId: string | number, status?: PostingStatus): Promise<MarketPostingListItem[]> {
   const payload = await getCms();
+  const where: Where = status
+    ? { and: [{ owner: { equals: ownerId } }, { status: { equals: status } }] }
+    : { owner: { equals: ownerId } };
   const result = await payload.find({
     collection: "market-postings",
-    where: { owner: { equals: ownerId } },
+    where,
     sort: "-createdAt",
     depth: 1,
     overrideAccess: true,

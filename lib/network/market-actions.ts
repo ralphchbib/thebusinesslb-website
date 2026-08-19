@@ -69,6 +69,94 @@ export async function createPostingAction(_prev: MarketFormState, formData: Form
   return { status: "success", message: "Posted — it's live on the Opportunities board." };
 }
 
+/**
+ * Owner-only content edit: title/description/category/location/budget/
+ * type. Deliberately never touches `status` or `owner` — those go through
+ * their own dedicated actions/field-level guards
+ * (PHASE13-REVIEW-REMEDIATION-PLAN.md §4), so this action can't become a
+ * side-channel around them even if someone tried adding those fields to
+ * the form later.
+ */
+export async function updatePostingDetailsAction(_prev: MarketFormState, formData: FormData): Promise<MarketFormState> {
+  const user = await getNetworkUser();
+  if (!user) return { status: "error", message: "Your session has expired. Please log in again." };
+
+  const postingId = String(formData.get("postingId") ?? "");
+  if (!postingId) return { status: "error", message: "Something went wrong. Please try again." };
+
+  const parsed = marketPostingSchema.safeParse({
+    postingType: formData.get("postingType"),
+    title: formData.get("title"),
+    description: formData.get("description"),
+    category: formData.get("category"),
+    location: formData.get("location"),
+    budgetRange: formData.get("budgetRange"),
+  });
+  if (!parsed.success) {
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of parsed.error.issues) fieldErrors[String(issue.path[0])] = issue.message;
+    return { status: "error", message: "Check the highlighted fields.", fieldErrors };
+  }
+
+  const payload = await getCms();
+  try {
+    await payload.update({
+      collection: "market-postings",
+      id: postingId,
+      data: {
+        postingType: parsed.data.postingType,
+        title: parsed.data.title,
+        description: parsed.data.description,
+        category: parsed.data.category || undefined,
+        location: parsed.data.location || undefined,
+        budgetRange: parsed.data.budgetRange || undefined,
+      },
+      user,
+      overrideAccess: false,
+    });
+  } catch (err) {
+    console.error("[market:posting:update:error]", err);
+    return { status: "error", message: "Something went wrong. Please try again." };
+  }
+
+  revalidatePath("/dashboard/opportunities");
+  revalidatePath("/network/opportunities");
+  revalidatePath(`/network/opportunities/${postingId}`);
+  return { status: "success", message: "Posting updated." };
+}
+
+/**
+ * Owner-only hard delete — only reachable at the access-control layer
+ * (`deleteOwnPosting`) when the posting has zero responses yet; the
+ * friendly message here covers that case without needing to re-check it
+ * client-side, since the access-control layer is the actual enforcement
+ * (PHASE13-REVIEW-REMEDIATION-PLAN.md §4).
+ */
+export async function deletePostingAction(_prev: MarketFormState, formData: FormData): Promise<MarketFormState> {
+  const user = await getNetworkUser();
+  if (!user) return { status: "error", message: "Your session has expired. Please log in again." };
+
+  const postingId = String(formData.get("postingId") ?? "");
+  if (!postingId) return { status: "error", message: "Something went wrong. Please try again." };
+
+  const payload = await getCms();
+  try {
+    await payload.delete({
+      collection: "market-postings",
+      id: postingId,
+      user,
+      overrideAccess: false,
+    });
+  } catch (err) {
+    console.error("[market:posting:delete:error]", err);
+    return { status: "error", message: "This posting can't be deleted — it may already have responses. Close it instead." };
+  }
+
+  revalidatePath("/dashboard/opportunities");
+  revalidatePath("/network/opportunities");
+  return { status: "success", message: "Posting deleted." };
+}
+
 /** Owner-only status change: close a posting or mark it fulfilled. Never re-opens — matching Connections/Conversations' "no undo checkbox flip" precedent (a new posting is the correct way to relist). */
 export async function updatePostingStatusAction(_prev: MarketFormState, formData: FormData): Promise<MarketFormState> {
   const user = await getNetworkUser();
