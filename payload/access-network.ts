@@ -18,6 +18,17 @@ import type { Access, FieldAccess } from "payload";
 // staff/network-account distinction applies to profile ownership checks.
 export function isStaff(user: unknown): boolean {
   const u = user as { collection?: string; role?: string } | null | undefined;
+  // PHASE14-REMEDIATION-PLAN.md §2 — `moderator` was briefly added here
+  // (admin/editor/moderator), which silently gave it the same network-wide
+  // ownership-bypass `editor` has into every private-content collection
+  // that consumes this helper (messages, reviews, recommendations,
+  // profiles, market postings) — far beyond the four collections the
+  // design's own access table (§F) scopes moderator to. Reverted to its
+  // original admin/editor shape. Moderator's access is granted narrowly
+  // and explicitly, collection by collection, in payload/access-moderation.ts
+  // (`isModerationStaff` for the three new moderation collections,
+  // `contentReportsAccess` for the one pre-existing collection it
+  // legitimately needs) — never through this shared bypass.
   return Boolean(u && u.collection === "users" && (u.role === "admin" || u.role === "editor"));
 }
 

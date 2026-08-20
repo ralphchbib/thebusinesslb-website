@@ -4,6 +4,15 @@ import type { CollectionConfig } from "payload";
  * Phase 1 role model: exactly two roles, per the approved CMS architecture
  * decision. Admin can do everything; Editor can edit content but not
  * users, site settings, or navigation.
+ *
+ * Phase 14 — a third role, Moderator, added per PHASE14-TECHNICAL-DESIGN.md
+ * §F: a scoped role for the new moderation collections (ModerationCases,
+ * ModerationAuditLog, Appeals) plus the existing ContentReports, without
+ * granting the broader CMS/site-content powers Editor has. Deliberately
+ * not the Blueprint's full eight-role model (§50) — the other six roles
+ * (Verification Officer, Content Editor, Customer Support, Institutional
+ * Manager, Finance Administrator, Analytics Viewer) have no moderation-
+ * specific responsibility and are out of this phase's scope.
  */
 export const Users: CollectionConfig = {
   slug: "users",
@@ -41,6 +50,7 @@ export const Users: CollectionConfig = {
       options: [
         { label: "Admin", value: "admin" },
         { label: "Editor", value: "editor" },
+        { label: "Moderator", value: "moderator" },
       ],
       access: {
         // Only an existing admin can change someone's role — an editor
