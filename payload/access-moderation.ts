@@ -127,17 +127,30 @@ async function ownedTargetKeys(payload: Payload, ownerId: string): Promise<strin
 }
 
 /**
+ * PHASE14-REMEDIATION-V2-PLAN.md §3 — a decision counts as "case
+ * history" for escalation purposes only if it was a sanction, not merely
+ * a completed review. `no-action` means the account was investigated and
+ * cleared — the design's own §E frames case history for this purpose as
+ * "count of prior **action-taken** decisions," and treating a cleared
+ * report as offense history would invert what the mandatory-escalation
+ * rule (§H) exists to protect against.
+ */
+const SANCTION_DECISIONS = ["content-removed", "warning-issued", "account-suspended"];
+
+/**
  * PHASE14-REMEDIATION-PLAN.md §3 — true if any *other*, already-decided
- * case exists against anything this account owns or sent. Used to gate
- * first-offense suspensions: per the design (§H), a lone moderator may
- * not finalize an `account-suspended` decision on an account with no
- * prior case history — only an admin may.
+ * case exists against anything this account owns or sent, where that
+ * decision was a sanction (see `SANCTION_DECISIONS` above) — a cleared
+ * (`no-action`) case never counts, however many of them exist. Used to
+ * gate first-offense suspensions: per the design (§H), a lone moderator
+ * may not finalize an `account-suspended` decision on an account with no
+ * prior sanction history — only an admin may.
  */
 export async function hasDecidedCaseHistory(payload: Payload, ownerId: string, excludeCaseId: string | number): Promise<boolean> {
   const keys = await ownedTargetKeys(payload, ownerId);
   const result = await payload.find({
     collection: "moderation-cases",
-    where: { and: [{ targetKey: { in: keys } }, { decision: { exists: true } }, { id: { not_equals: excludeCaseId } }] },
+    where: { and: [{ targetKey: { in: keys } }, { decision: { in: SANCTION_DECISIONS } }, { id: { not_equals: excludeCaseId } }] },
     limit: 1,
     depth: 0,
     overrideAccess: true,
@@ -177,17 +190,30 @@ export const updateModerationCase: Access = async ({ req: { user, payload }, id,
  * top of it, not a substitute for it.
  */
 export const createAppeal: Access = async ({ req: { user, payload }, data }) => {
-  if (isModerationStaff(user)) return true;
-  if (!isNetworkAccount(user)) return false;
   const caseId = (data as { case?: unknown } | undefined)?.case;
   if (caseId === undefined || caseId === null) return false;
-  const caseDoc = (await payload.findByID({ collection: "moderation-cases", id: caseId as string | number, depth: 0, overrideAccess: true }).catch(() => null)) as
-    | { target?: PolymorphicRef; appealDeadline?: string | null }
-    | null;
-  if (!caseDoc) return false;
-  if (!caseDoc.appealDeadline || new Date(caseDoc.appealDeadline).getTime() < Date.now()) return false;
-  const ownerId = await resolveContentOwnerId(payload, caseDoc.target);
-  if (ownerId === null || ownerId !== String(user.id)) return false;
+
+  // PHASE14-REMEDIATION-V2-PLAN.md §"Secondary Hardening" — the duplicate-
+  // appeal check below now runs for every caller, including moderation
+  // staff. It previously sat after an early `if (isModerationStaff(user))
+  // return true`, so a staff-initiated create bypassed it entirely and
+  // was caught only by the database's unique index — a real, if not
+  // currently product-reachable, inconsistency between what this function
+  // claims to enforce and what it actually did (PHASE14-RELEASE-REVIEW-V2.md
+  // §C.2). Ownership/deadline checks still don't apply to staff — an
+  // appeal isn't *their* appeal to own a deadline against — but "does one
+  // already exist for this case" is not role-specific and never should
+  // have been skippable.
+  if (!isModerationStaff(user)) {
+    if (!isNetworkAccount(user)) return false;
+    const caseDoc = (await payload.findByID({ collection: "moderation-cases", id: caseId as string | number, depth: 0, overrideAccess: true }).catch(() => null)) as
+      | { target?: PolymorphicRef; appealDeadline?: string | null }
+      | null;
+    if (!caseDoc) return false;
+    if (!caseDoc.appealDeadline || new Date(caseDoc.appealDeadline).getTime() < Date.now()) return false;
+    const ownerId = await resolveContentOwnerId(payload, caseDoc.target);
+    if (ownerId === null || ownerId !== String(user.id)) return false;
+  }
 
   const existing = await payload.find({ collection: "appeals", where: { case: { equals: caseId } }, limit: 1, depth: 0, overrideAccess: true });
   return existing.totalDocs === 0;
