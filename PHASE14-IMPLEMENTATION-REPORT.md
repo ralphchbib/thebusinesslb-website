@@ -137,4 +137,6 @@ One incidental bug this revert surfaced and fixed: `reviewAppeal`'s segregation-
 
 **Validation re-run after remediation:** `npx tsc --noEmit` (clean), `npm run lint` (clean), `npm test` (4/4 pass), `npm run build` (clean, 59 routes). Live re-verification via a second temporary, uncommitted test harness (same pattern as the original pass, deleted before commit): all three fixes confirmed working as described above; unauthenticated REST protection on all three new collections re-confirmed unchanged (403); a spot-check regression sweep (public Opportunities browse, login page) confirmed no unrelated breakage. Audit-log immutability was not independently re-tested this pass — `denyMutation` was not touched by any of the three fixes, so it is unaffected by construction, not by omission. All test data (three fresh staff accounts, network accounts, a connection/conversation/message chain, postings, reports, cases, appeals, audit-log rows) was deleted after validation; final inventory confirmed zero rows remaining.
 
+**Remediation commit:** `829fb1439823b811792b8522245488e1f3d27a13`
+
 **Recommendation:** a second independent release review, per instruction — see `PHASE14-RELEASE-REVIEW-V2.md`.
