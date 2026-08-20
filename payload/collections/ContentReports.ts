@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
-import { createContentReport, staffOnlyRead, staffOnlyUpdate } from "../access-trust";
+import { createContentReport } from "../access-trust";
+import { contentReportsAccess } from "../access-moderation";
 
 /** Per-collection field to snapshot as evidence — PHASE14-TECHNICAL-DESIGN.md §G: a moderator must see what was actually reported, even if the content is later edited or deleted. */
 const SNAPSHOT_FIELDS: Record<string, string[]> = {
@@ -42,10 +43,13 @@ export const ContentReports: CollectionConfig = {
     defaultColumns: ["target", "reason", "reporter", "resolved"],
   },
   access: {
-    read: staffOnlyRead,
+    // PHASE14-REMEDIATION-PLAN.md §2 — moderator's read/update access to
+    // ContentReports is now granted explicitly here (admin/editor/moderator),
+    // not inherited through `isStaff()`, which no longer includes moderator.
+    read: contentReportsAccess,
     create: createContentReport,
-    update: staffOnlyUpdate,
-    delete: staffOnlyUpdate,
+    update: contentReportsAccess,
+    delete: contentReportsAccess,
   },
   fields: [
     {

@@ -10,6 +10,14 @@ const TERMINAL = new Set(["upheld", "denied"]);
  * by convention: `reviewAppeal` (payload/access-moderation.ts) rejects
  * the same staff account that made the underlying case's decision, for
  * every role including Admin.
+ *
+ * PHASE14-REMEDIATION-PLAN.md §1 — duplicate appeals on the same case are
+ * now rejected at two independent layers: `createAppeal`'s own existing-
+ * appeal check (payload/access-moderation.ts), and a database-level unique
+ * index on `case` below — the same defense-in-depth shape Reviews.ts
+ * already established for (owner, profileKey). A race between two
+ * concurrent create attempts is caught by the DB constraint even if it
+ * somehow slipped past the access-layer check.
  */
 export const Appeals: CollectionConfig = {
   slug: "appeals",
@@ -20,6 +28,7 @@ export const Appeals: CollectionConfig = {
     defaultColumns: ["status", "case", "appellant", "createdAt"],
     description: "Reviewer must be a different staff account than whoever decided the underlying case — enforced server-side, not just hidden in the UI.",
   },
+  indexes: [{ fields: ["case"], unique: true }],
   access: {
     create: createAppeal,
     read: readOwnAppealOrModerationStaff,

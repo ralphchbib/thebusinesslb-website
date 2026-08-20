@@ -1,21 +1,28 @@
-import type { Access } from "payload";
+import type { Access, Payload } from "payload";
 import { isStaff, isNetworkAccount } from "./access-network";
 
 /**
  * Phase 14 — access control for ModerationCases/ModerationAuditLog/Appeals
- * (PHASE14-TECHNICAL-DESIGN.md §F/§G). Two new checks, deliberately
- * distinct from access-network.ts's `isStaff`:
+ * (PHASE14-TECHNICAL-DESIGN.md §F/§G). Two checks, deliberately distinct
+ * from access-network.ts's `isStaff`:
  *
  * - `isAdminRole` — admin only, for the handful of actions the design
- *   restricts even from moderators (escalation targets).
+ *   restricts even from moderators (escalation targets, first-offense
+ *   suspensions — see `updateModerationCase` below).
  * - `isModerationStaff` — admin or moderator, explicitly excluding editor.
- *   `isStaff` (admin/editor/moderator) still gates the *existing*
- *   collections a case needs to read to render reported content
- *   (reviews/recommendations/messages/market-postings) — editor's
- *   pre-existing reach there is unrelated to this phase and left alone.
- *   The three *new* collections this phase introduces use the narrower
- *   check instead, per §F's "editor — no access to any moderation
- *   collection."
+ *
+ * PHASE14-REMEDIATION-PLAN.md §2 — `moderator` was briefly added to the
+ * shared `isStaff()` helper (used for ownership-bypass across every
+ * private-content collection in the app: messages, reviews,
+ * recommendations, profiles, market postings), which silently gave
+ * moderator the same network-wide staff bypass `editor` already had —
+ * far beyond the design's own §F access table, which scopes moderator to
+ * exactly four collections: ModerationCases, Appeals, ModerationAuditLog,
+ * and ContentReports. `isStaff()` has been reverted to its pre-Phase-14
+ * shape (admin/editor only); moderator's access is now granted narrowly,
+ * collection by collection, via `isModerationStaff` (the three new
+ * collections) and `contentReportsAccess` below (the one pre-existing
+ * collection moderator legitimately needs).
  */
 
 export function isAdminRole(user: unknown): boolean {
@@ -29,6 +36,19 @@ export function isModerationStaff(user: unknown): boolean {
 }
 
 export const moderationStaffOnly: Access = ({ req: { user } }) => isModerationStaff(user);
+
+/**
+ * PHASE14-REMEDIATION-PLAN.md §2 — ContentReports predates this phase and
+ * is otherwise gated by `access-trust.ts`'s `staffOnlyRead`/
+ * `staffOnlyUpdate` (i.e. `isStaff`, admin/editor). Moderator needs the
+ * same reach — reports are the raw material a case is built from — but
+ * granting it via `isStaff()` is exactly the over-broad grant this
+ * remediation removes. This function reproduces admin/editor's existing,
+ * unchanged access to ContentReports and adds moderator explicitly,
+ * without touching `isStaff()` itself or any other collection that
+ * consumes it.
+ */
+export const contentReportsAccess: Access = ({ req: { user } }) => isStaff(user) || isModerationStaff(user);
 
 /** ModerationAuditLog — append-only. No update/delete for any role, including admin (PHASE14-TECHNICAL-DESIGN.md §G). */
 export const denyMutation: Access = () => false;
@@ -80,7 +100,82 @@ export async function resolveContentOwnerId(
   return ownerId != null ? String(ownerId) : null;
 }
 
-/** Appeals create — the acting network account must be the subject of the case's decision (never trusted from client-supplied `appellant`). */
+/**
+ * PHASE14-REMEDIATION-PLAN.md §1 — every reportable collection this
+ * account could own or have sent, resolved to `${relationTo}:${value}`
+ * `targetKey`s, the same derived shape `ModerationCases.targetKey` uses.
+ * Shared by the escalation history check below and by
+ * `lib/network/moderation.ts`'s "Account Standing" page (kept as two
+ * independent implementations rather than one cross-imported helper —
+ * `payload/` must not depend on `lib/network/`, which itself depends on
+ * `getCms()` → `payload.config.ts` → this file, a circular import).
+ */
+async function ownedTargetKeys(payload: Payload, ownerId: string): Promise<string[]> {
+  const [reviews, recommendations, messages, postings] = await Promise.all([
+    payload.find({ collection: "reviews", where: { owner: { equals: ownerId } }, limit: 200, depth: 0, overrideAccess: true }),
+    payload.find({ collection: "recommendations", where: { owner: { equals: ownerId } }, limit: 200, depth: 0, overrideAccess: true }),
+    payload.find({ collection: "messages", where: { sender: { equals: ownerId } }, limit: 200, depth: 0, overrideAccess: true }),
+    payload.find({ collection: "market-postings", where: { owner: { equals: ownerId } }, limit: 200, depth: 0, overrideAccess: true }),
+  ]);
+  return [
+    `network-accounts:${ownerId}`,
+    ...reviews.docs.map((d) => `reviews:${d.id}`),
+    ...recommendations.docs.map((d) => `recommendations:${d.id}`),
+    ...messages.docs.map((d) => `messages:${d.id}`),
+    ...postings.docs.map((d) => `market-postings:${d.id}`),
+  ];
+}
+
+/**
+ * PHASE14-REMEDIATION-PLAN.md §3 — true if any *other*, already-decided
+ * case exists against anything this account owns or sent. Used to gate
+ * first-offense suspensions: per the design (§H), a lone moderator may
+ * not finalize an `account-suspended` decision on an account with no
+ * prior case history — only an admin may.
+ */
+export async function hasDecidedCaseHistory(payload: Payload, ownerId: string, excludeCaseId: string | number): Promise<boolean> {
+  const keys = await ownedTargetKeys(payload, ownerId);
+  const result = await payload.find({
+    collection: "moderation-cases",
+    where: { and: [{ targetKey: { in: keys } }, { decision: { exists: true } }, { id: { not_equals: excludeCaseId } }] },
+    limit: 1,
+    depth: 0,
+    overrideAccess: true,
+  });
+  return result.totalDocs > 0;
+}
+
+/**
+ * ModerationCases update — moderation staff, with one carve-out
+ * (PHASE14-REMEDIATION-PLAN.md §3): a non-admin cannot finalize an
+ * `account-suspended` decision on a first-offense account. This is
+ * enforced here, at the access layer, not only as a hook-level check —
+ * a rejected write here never reaches the beforeChange hook at all.
+ */
+export const updateModerationCase: Access = async ({ req: { user, payload }, id, data }) => {
+  if (isAdminRole(user)) return true;
+  if (!isModerationStaff(user)) return false;
+  if (!id || (data as { decision?: string } | undefined)?.decision !== "account-suspended") return true;
+
+  const caseDoc = (await payload.findByID({ collection: "moderation-cases", id, depth: 0, overrideAccess: true }).catch(() => null)) as
+    | { decision?: string; target?: PolymorphicRef }
+    | null;
+  if (!caseDoc) return false;
+  if (caseDoc.decision === "account-suspended") return true; // already decided — editing notes on an existing decision isn't a new suspension
+
+  const ownerId = await resolveContentOwnerId(payload, caseDoc.target);
+  if (!ownerId) return false;
+  return hasDecidedCaseHistory(payload, ownerId, id);
+};
+
+/**
+ * Appeals create — the acting network account must be the subject of the
+ * case's decision (never trusted from client-supplied `appellant`), the
+ * appeal deadline hasn't passed, and — PHASE14-REMEDIATION-PLAN.md §1 —
+ * no appeal already exists for this case. This is the actual trust
+ * boundary; `submitAppealAction`'s own pre-check is a UX convenience on
+ * top of it, not a substitute for it.
+ */
 export const createAppeal: Access = async ({ req: { user, payload }, data }) => {
   if (isModerationStaff(user)) return true;
   if (!isNetworkAccount(user)) return false;
@@ -92,7 +187,10 @@ export const createAppeal: Access = async ({ req: { user, payload }, data }) => 
   if (!caseDoc) return false;
   if (!caseDoc.appealDeadline || new Date(caseDoc.appealDeadline).getTime() < Date.now()) return false;
   const ownerId = await resolveContentOwnerId(payload, caseDoc.target);
-  return ownerId !== null && ownerId === String(user.id);
+  if (ownerId === null || ownerId !== String(user.id)) return false;
+
+  const existing = await payload.find({ collection: "appeals", where: { case: { equals: caseId } }, limit: 1, depth: 0, overrideAccess: true });
+  return existing.totalDocs === 0;
 };
 
 /** Appeals read — the appellant reads their own; moderation staff read all. */
@@ -119,6 +217,11 @@ export const reviewAppeal: Access = async ({ req: { user, payload }, id }) => {
     | null;
   if (!caseDoc) return false;
   const decisionById = typeof caseDoc.decisionBy === "object" ? (caseDoc.decisionBy as { id?: unknown })?.id : caseDoc.decisionBy;
-  if (decisionById != null && isStaff(user) && String(decisionById) === String((user as { id: string }).id)) return false;
+  // `isModerationStaff(user)` already confirmed true by the guard above —
+  // checking that here (previously `isStaff(user)`) would have silently
+  // skipped this comparison for a moderator decider once `moderator` was
+  // removed from `isStaff()` (PHASE14-REMEDIATION-PLAN.md §2), breaking
+  // segregation of duties for exactly the role most likely to need it.
+  if (decisionById != null && String(decisionById) === String((user as { id: string }).id)) return false;
   return true;
 };

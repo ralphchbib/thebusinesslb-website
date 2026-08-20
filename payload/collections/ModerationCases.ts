@@ -1,5 +1,5 @@
 import type { CollectionConfig } from "payload";
-import { moderationStaffOnly, denyMutation, resolveContentOwnerId } from "../access-moderation";
+import { moderationStaffOnly, denyMutation, resolveContentOwnerId, updateModerationCase } from "../access-moderation";
 import { logModerationEvent } from "../moderation-audit";
 
 const DECIDED_STATUSES = new Set(["action-taken", "dismissed"]);
@@ -16,6 +16,15 @@ const APPEAL_WINDOW_DAYS = 14;
  * one enforcement primitive this phase reuses rather than reinvents:
  * `NetworkAccounts.status` (already built in Phase 9, already blocks
  * login — see that collection's own comment).
+ *
+ * PHASE14-REMEDIATION-PLAN.md §3 — `access.update` uses
+ * `updateModerationCase` rather than the general `moderationStaffOnly`:
+ * it carries one additional rule the design (§H) always intended but the
+ * original implementation never built — a non-admin cannot finalize an
+ * `account-suspended` decision on an account with no prior case history.
+ * First-offense suspensions must go through an admin (directly, or via
+ * escalation — `status: "escalated"` itself is unrestricted for
+ * moderators, only the `account-suspended` decision value is gated).
  */
 export const ModerationCases: CollectionConfig = {
   slug: "moderation-cases",
@@ -30,7 +39,7 @@ export const ModerationCases: CollectionConfig = {
   access: {
     read: moderationStaffOnly,
     create: moderationStaffOnly,
-    update: moderationStaffOnly,
+    update: updateModerationCase,
     delete: denyMutation,
   },
   fields: [
