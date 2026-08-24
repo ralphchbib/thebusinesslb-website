@@ -208,6 +208,22 @@ export const ModerationCases: CollectionConfig = {
                   id: ownerId,
                   data: { status: "suspended" },
                   overrideAccess: true,
+                  // PHASE14-REMEDIATION-V3-PLAN.md — this nested write must
+                  // forward `req` to join the same transaction as the
+                  // triggering case write, exactly like Appeals.ts's
+                  // structurally identical reactivation call
+                  // (status: "active") already does. Without it, this write
+                  // opens its own separate transaction/connection and races
+                  // the outer, still-uncommitted transaction for a lock on
+                  // the same network-accounts row — live-reproduced as a
+                  // Postgres 57014 statement timeout ("while locking tuple
+                  // ... in relation network_accounts"), silently swallowed
+                  // by the catch below, leaving the case correctly recorded
+                  // as account-suspended while the account itself stayed
+                  // active. Same gotcha VerificationRequests.ts and
+                  // moderation-audit.ts's logModerationEvent already
+                  // document for their own nested writes.
+                  req,
                 });
               }
             } catch (err) {
