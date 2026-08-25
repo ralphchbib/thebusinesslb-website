@@ -143,6 +143,6 @@ Full root-cause analysis for each finding is in `PHASE15-REMEDIATION-PLAN.md`, w
 
 **Validation re-run after this pass:** `npx tsc --noEmit` (clean), `npm run lint` (clean), `npm test` (4/4 pass), `npm run build` (clean, 59 routes). Live re-verification via a temporary, uncommitted test harness (same scratch-route pattern as the original pass, deleted before this commit): submission, review, approval, rejection, revocation (admin-gated), re-verification (renewal submission after revocation), appeal creation, domain-matched appeal creation (both directions, corrected), segregation of duties, duplicate-appeal prevention, verification-officer audit visibility (correctly scoped), moderator audit visibility (unchanged), audit immutability, and the stale-note fix (via the real appeal-reopen path) all re-confirmed working as described above. Full Phase 14 regression (suspend → appeal → cross-domain-block → self-review-block → different-moderator uphold → reactivate) re-run end to end and confirmed unaffected by the `createAppeal` domain-matching change. All test data deleted after validation; final inventory confirmed zero rows remaining across every touched collection, including the moderation-cases rows this pass's own regression test created.
 
-**Remediation commit:** `FILL-IN-AFTER-COMMIT`
+**Remediation commit:** `9c75d11`
 
 **Recommendation:** a second independent release review, per instruction, from a fresh isolated worktree — see `PHASE15-RELEASE-REVIEW-V2.md`.
