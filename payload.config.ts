@@ -36,6 +36,7 @@ import { MarketPostings } from "@/payload/collections/MarketPostings";
 import { ModerationCases } from "@/payload/collections/ModerationCases";
 import { ModerationAuditLog } from "@/payload/collections/ModerationAuditLog";
 import { Appeals } from "@/payload/collections/Appeals";
+import { VerificationEvidence } from "@/payload/collections/VerificationEvidence";
 import { SiteSettings } from "@/payload/globals/SiteSettings";
 import { Homepage } from "@/payload/globals/Homepage";
 import { siteConfig } from "@/lib/config";
@@ -120,6 +121,7 @@ export default buildConfig({
     ModerationCases,
     ModerationAuditLog,
     Appeals,
+    VerificationEvidence,
   ],
   globals: [SiteSettings, Homepage],
   sharp,

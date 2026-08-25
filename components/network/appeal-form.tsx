@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 const initialState: AppealFormState = { status: "idle" };
 
-export function AppealForm({ caseId }: { caseId: string | number }) {
+export function AppealForm({ caseId, caseType = "moderation-cases" }: { caseId: string | number; caseType?: "moderation-cases" | "verification-requests" }) {
   const [state, formAction, pending] = useActionState(submitAppealAction, initialState);
 
   if (state.status === "success") {
@@ -17,6 +17,7 @@ export function AppealForm({ caseId }: { caseId: string | number }) {
   return (
     <form action={formAction} className="mt-3 flex flex-col gap-2">
       <input type="hidden" name="caseId" value={caseId} />
+      <input type="hidden" name="caseType" value={caseType} />
       <Textarea name="statement" required rows={3} placeholder="Explain why you're appealing this decision…" />
       {state.status === "error" && <p className="text-[13px] text-error">{state.message}</p>}
       <Button type="submit" variant="secondary" size="sm" disabled={pending} className="self-start">

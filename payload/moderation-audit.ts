@@ -7,6 +7,13 @@ import type { PayloadRequest } from "payload";
  * matching PHASE14-TECHNICAL-DESIGN.md §D.2's requirement that the log be
  * the one trustworthy record of what happened, independent of whatever
  * the mutable case/appeal record says later.
+ *
+ * Phase 15 — `case` widened from a bare id to a polymorphic ref
+ * (`{relationTo, value}`), since `ModerationAuditLog.case` is now
+ * `relationTo: ["moderation-cases", "verification-requests"]`
+ * (PHASE15-TECHNICAL-DESIGN.md §D.4/§I) and `action` gains verification-
+ * specific values. Nothing here needs branching logic — the field already
+ * accepts a polymorphic value natively; only the type/shape changes.
  */
 export type ModerationAuditAction =
   | "case-opened"
@@ -14,7 +21,13 @@ export type ModerationAuditAction =
   | "decision-recorded"
   | "escalated"
   | "appeal-submitted"
-  | "appeal-decided";
+  | "appeal-decided"
+  | "verification-submitted"
+  | "verification-decided"
+  | "verification-revoked"
+  | "re-verification-requested";
+
+export type AuditCaseRef = { relationTo: "moderation-cases" | "verification-requests"; value: string | number };
 
 interface LogParams {
   // `req` is passed through and forwarded to the nested create below so
@@ -26,7 +39,7 @@ interface LogParams {
   // gotcha VerificationRequests.ts already documents for its own nested
   // write.
   req: PayloadRequest;
-  case?: string | number | null;
+  case?: AuditCaseRef | null;
   actorId?: string | number | null;
   action: ModerationAuditAction;
   fromValue?: string;

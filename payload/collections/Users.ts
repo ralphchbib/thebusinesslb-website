@@ -8,11 +8,19 @@ import type { CollectionConfig } from "payload";
  * Phase 14 — a third role, Moderator, added per PHASE14-TECHNICAL-DESIGN.md
  * §F: a scoped role for the new moderation collections (ModerationCases,
  * ModerationAuditLog, Appeals) plus the existing ContentReports, without
- * granting the broader CMS/site-content powers Editor has. Deliberately
- * not the Blueprint's full eight-role model (§50) — the other six roles
- * (Verification Officer, Content Editor, Customer Support, Institutional
- * Manager, Finance Administrator, Analytics Viewer) have no moderation-
- * specific responsibility and are out of this phase's scope.
+ * granting the broader CMS/site-content powers Editor has.
+ *
+ * Phase 15 — a fourth role, Verification Officer, added per
+ * PHASE15-TECHNICAL-DESIGN.md §E: scoped to VerificationRequests and
+ * VerificationEvidence, plus (like Moderator) the shared Appeals/
+ * ModerationAuditLog collections — but never to the other's domain-
+ * specific collections (a Verification Officer cannot read ModerationCases
+ * or ContentReports; a Moderator cannot read VerificationRequests or
+ * VerificationEvidence). Deliberately not the Blueprint's full eight-role
+ * model (§50) — the remaining five roles (Content Editor, Customer
+ * Support, Institutional Manager, Finance Administrator, Analytics Viewer)
+ * have no moderation- or verification-specific responsibility and are out
+ * of scope.
  */
 export const Users: CollectionConfig = {
   slug: "users",
@@ -51,6 +59,7 @@ export const Users: CollectionConfig = {
         { label: "Admin", value: "admin" },
         { label: "Editor", value: "editor" },
         { label: "Moderator", value: "moderator" },
+        { label: "Verification Officer", value: "verification-officer" },
       ],
       access: {
         // Only an existing admin can change someone's role — an editor
