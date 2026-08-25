@@ -1,5 +1,13 @@
 import type { Access, Payload } from "payload";
-import { isStaff, isNetworkAccount } from "./access-network";
+import { isStaff, isNetworkAccount, isAdminRole } from "./access-network";
+import { isVerificationStaff } from "./access-verification";
+
+// Re-exported for backward compatibility — every existing import of
+// `isAdminRole` from this module (ModerationCases.ts, etc.) keeps working
+// unchanged. The function itself now lives in access-network.ts so
+// access-verification.ts can depend on it too without either governance
+// module importing the other (PHASE15-TECHNICAL-DESIGN.md §E).
+export { isAdminRole };
 
 /**
  * Phase 14 — access control for ModerationCases/ModerationAuditLog/Appeals
@@ -24,11 +32,6 @@ import { isStaff, isNetworkAccount } from "./access-network";
  * collections) and `contentReportsAccess` below (the one pre-existing
  * collection moderator legitimately needs).
  */
-
-export function isAdminRole(user: unknown): boolean {
-  const u = user as { collection?: string; role?: string } | null | undefined;
-  return Boolean(u && u.collection === "users" && u.role === "admin");
-}
 
 export function isModerationStaff(user: unknown): boolean {
   const u = user as { collection?: string; role?: string } | null | undefined;
@@ -182,72 +185,129 @@ export const updateModerationCase: Access = async ({ req: { user, payload }, id,
 };
 
 /**
+ * Phase 15 — `Appeals.case` is now polymorphic
+ * (`["moderation-cases", "verification-requests"]`, PHASE15-TECHNICAL-
+ * DESIGN.md §D.3), so every function below that used to assume "the case
+ * is always a moderation-cases row" now resolves a uniform context first:
+ * which collection the case belongs to, who owns it (for the appellant
+ * check), when its appeal window closes, and who decided it (for
+ * segregation of duties). Two independent shapes are unified into one
+ * return type here rather than duplicated across `createAppeal` and
+ * `reviewAppeal` separately.
+ */
+interface AppealCaseContext {
+  collectionType: "moderation-cases" | "verification-requests";
+  ownerId: string | null;
+  appealDeadline: string | null;
+  decisionById: string | null;
+}
+
+async function resolveAppealCaseContext(payload: Payload, caseRef: PolymorphicRef): Promise<AppealCaseContext | null> {
+  if (!caseRef?.relationTo || caseRef.value === undefined || caseRef.value === null) return null;
+  const caseId = typeof caseRef.value === "object" && caseRef.value !== null ? (caseRef.value as { id?: unknown }).id : caseRef.value;
+  if (caseId == null) return null;
+
+  if (caseRef.relationTo === "moderation-cases") {
+    const doc = (await payload.findByID({ collection: "moderation-cases", id: caseId as string | number, depth: 0, overrideAccess: true }).catch(() => null)) as
+      | { target?: PolymorphicRef; appealDeadline?: string | null; decisionBy?: unknown }
+      | null;
+    if (!doc) return null;
+    const ownerId = await resolveContentOwnerId(payload, doc.target);
+    const decisionById = typeof doc.decisionBy === "object" && doc.decisionBy !== null ? (doc.decisionBy as { id?: unknown }).id : doc.decisionBy;
+    return { collectionType: "moderation-cases", ownerId, appealDeadline: doc.appealDeadline ?? null, decisionById: decisionById != null ? String(decisionById) : null };
+  }
+
+  if (caseRef.relationTo === "verification-requests") {
+    const doc = (await payload.findByID({ collection: "verification-requests", id: caseId as string | number, depth: 0, overrideAccess: true }).catch(() => null)) as
+      | { owner?: unknown; appealDeadline?: string | null; status?: string; reviewedBy?: unknown; revokedBy?: unknown }
+      | null;
+    if (!doc) return null;
+    const ownerId = typeof doc.owner === "object" && doc.owner !== null ? (doc.owner as { id?: unknown }).id : doc.owner;
+    // A rejection's decider is `reviewedBy`; a revocation's decider is
+    // `revokedBy` — VerificationRequests.ts's own beforeChange hook only
+    // sets `reviewedBy` on the approve/reject transition (`DECIDED_STATUSES`),
+    // never on revocation, so reading `reviewedBy` alone silently resolved
+    // to nobody for a revoked request and let its own revoker review the
+    // appeal against it — live-caught during this phase's own validation,
+    // fixed here rather than left for a future review cycle to find.
+    const decisionRef = doc.status === "revoked" ? doc.revokedBy : doc.reviewedBy;
+    const decisionById = typeof decisionRef === "object" && decisionRef !== null ? (decisionRef as { id?: unknown }).id : decisionRef;
+    return {
+      collectionType: "verification-requests",
+      ownerId: ownerId != null ? String(ownerId) : null,
+      appealDeadline: doc.appealDeadline ?? null,
+      decisionById: decisionById != null ? String(decisionById) : null,
+    };
+  }
+
+  return null;
+}
+
+function isMatchingGovernanceStaff(user: unknown, collectionType: AppealCaseContext["collectionType"]): boolean {
+  if (isAdminRole(user)) return true;
+  return collectionType === "moderation-cases" ? isModerationStaff(user) : isVerificationStaff(user);
+}
+
+/**
  * Appeals create — the acting network account must be the subject of the
  * case's decision (never trusted from client-supplied `appellant`), the
  * appeal deadline hasn't passed, and — PHASE14-REMEDIATION-PLAN.md §1 —
  * no appeal already exists for this case. This is the actual trust
  * boundary; `submitAppealAction`'s own pre-check is a UX convenience on
  * top of it, not a substitute for it.
+ *
+ * Duplicate check queries `caseKey` (a derived `${relationTo}:${value}`
+ * text field, same shape and reason as `ModerationCases.targetKey`) rather
+ * than `case` directly — Payload's polymorphic-relationship fields aren't
+ * filterable by exact (relationTo, value) the way a plain field is.
  */
 export const createAppeal: Access = async ({ req: { user, payload }, data }) => {
-  const caseId = (data as { case?: unknown } | undefined)?.case;
-  if (caseId === undefined || caseId === null) return false;
+  const caseRef = (data as { case?: PolymorphicRef } | undefined)?.case;
+  if (!caseRef?.relationTo || caseRef.value === undefined || caseRef.value === null) return false;
 
   // PHASE14-REMEDIATION-V2-PLAN.md §"Secondary Hardening" — the duplicate-
-  // appeal check below now runs for every caller, including moderation
-  // staff. It previously sat after an early `if (isModerationStaff(user))
-  // return true`, so a staff-initiated create bypassed it entirely and
-  // was caught only by the database's unique index — a real, if not
-  // currently product-reachable, inconsistency between what this function
-  // claims to enforce and what it actually did (PHASE14-RELEASE-REVIEW-V2.md
-  // §C.2). Ownership/deadline checks still don't apply to staff — an
-  // appeal isn't *their* appeal to own a deadline against — but "does one
-  // already exist for this case" is not role-specific and never should
-  // have been skippable.
-  if (!isModerationStaff(user)) {
+  // appeal check below runs for every caller, including governance staff.
+  // Ownership/deadline checks don't apply to staff — an appeal isn't
+  // *their* appeal to own a deadline against — but "does one already
+  // exist for this case" is not role-specific and never should be
+  // skippable.
+  const isStaffCreator = isModerationStaff(user) || isVerificationStaff(user);
+  if (!isStaffCreator) {
     if (!isNetworkAccount(user)) return false;
-    const caseDoc = (await payload.findByID({ collection: "moderation-cases", id: caseId as string | number, depth: 0, overrideAccess: true }).catch(() => null)) as
-      | { target?: PolymorphicRef; appealDeadline?: string | null }
-      | null;
-    if (!caseDoc) return false;
-    if (!caseDoc.appealDeadline || new Date(caseDoc.appealDeadline).getTime() < Date.now()) return false;
-    const ownerId = await resolveContentOwnerId(payload, caseDoc.target);
-    if (ownerId === null || ownerId !== String(user.id)) return false;
+    const ctx = await resolveAppealCaseContext(payload, caseRef);
+    if (!ctx) return false;
+    if (!ctx.appealDeadline || new Date(ctx.appealDeadline).getTime() < Date.now()) return false;
+    if (ctx.ownerId === null || ctx.ownerId !== String(user.id)) return false;
   }
 
-  const existing = await payload.find({ collection: "appeals", where: { case: { equals: caseId } }, limit: 1, depth: 0, overrideAccess: true });
+  const caseKey = `${caseRef.relationTo}:${typeof caseRef.value === "object" ? (caseRef.value as { id?: unknown }).id : caseRef.value}`;
+  const existing = await payload.find({ collection: "appeals", where: { caseKey: { equals: caseKey } }, limit: 1, depth: 0, overrideAccess: true });
   return existing.totalDocs === 0;
 };
 
-/** Appeals read — the appellant reads their own; moderation staff read all. */
-export const readOwnAppealOrModerationStaff: Access = ({ req: { user } }) => {
-  if (isModerationStaff(user)) return true;
+/** Appeals read — the appellant reads their own; governance staff (moderation or verification) read all. */
+export const readOwnAppealOrGovernanceStaff: Access = ({ req: { user } }) => {
+  if (isModerationStaff(user) || isVerificationStaff(user)) return true;
   if (isNetworkAccount(user)) return { appellant: { equals: user.id } };
   return false;
 };
 
 /**
- * Appeals update (the review action) — moderation staff only, and never
- * the same staff account that made the underlying case's decision, even
- * if that account is `admin` (PHASE14-TECHNICAL-DESIGN.md §G — segregation
- * of duties applies to every role, not just moderator).
+ * Appeals update (the review action) — staff from the *matching* domain
+ * only (a moderator cannot review a verification appeal and a verification
+ * officer cannot review a moderation appeal, per PHASE15-TECHNICAL-
+ * DESIGN.md §E — each role has no standing to judge the other's domain),
+ * admin exempt from the domain check but never from segregation of
+ * duties: never the same staff account that made the underlying decision,
+ * even if that account is admin (PHASE14-TECHNICAL-DESIGN.md §G).
  */
 export const reviewAppeal: Access = async ({ req: { user, payload }, id }) => {
-  if (!isModerationStaff(user) || !id) return false;
-  const appeal = (await payload.findByID({ collection: "appeals", id, depth: 0, overrideAccess: true }).catch(() => null)) as { case?: unknown } | null;
+  if (!id || (!isModerationStaff(user) && !isVerificationStaff(user))) return false;
+  const appeal = (await payload.findByID({ collection: "appeals", id, depth: 0, overrideAccess: true }).catch(() => null)) as { case?: PolymorphicRef } | null;
   if (!appeal?.case) return false;
-  const caseId = typeof appeal.case === "object" ? (appeal.case as { id?: unknown }).id : appeal.case;
-  if (caseId == null) return false;
-  const caseDoc = (await payload.findByID({ collection: "moderation-cases", id: caseId as string | number, depth: 0, overrideAccess: true }).catch(() => null)) as
-    | { decisionBy?: unknown }
-    | null;
-  if (!caseDoc) return false;
-  const decisionById = typeof caseDoc.decisionBy === "object" ? (caseDoc.decisionBy as { id?: unknown })?.id : caseDoc.decisionBy;
-  // `isModerationStaff(user)` already confirmed true by the guard above —
-  // checking that here (previously `isStaff(user)`) would have silently
-  // skipped this comparison for a moderator decider once `moderator` was
-  // removed from `isStaff()` (PHASE14-REMEDIATION-PLAN.md §2), breaking
-  // segregation of duties for exactly the role most likely to need it.
-  if (decisionById != null && String(decisionById) === String((user as { id: string }).id)) return false;
+  const ctx = await resolveAppealCaseContext(payload, appeal.case);
+  if (!ctx) return false;
+  if (!isMatchingGovernanceStaff(user, ctx.collectionType)) return false;
+  if (ctx.decisionById != null && ctx.decisionById === String((user as { id: string }).id)) return false;
   return true;
 };

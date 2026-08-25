@@ -171,15 +171,17 @@ export const ModerationCases: CollectionConfig = {
         // as Appeals.ts's own actorId, for the same reason.
         const actorId = req.user && (req.user as { collection?: string }).collection === "users" ? req.user.id : null;
 
+        const caseRef = { relationTo: "moderation-cases" as const, value: doc.id as string | number };
+
         if (operation === "create") {
-          await logModerationEvent({ req, case: doc.id, actorId, action: "case-opened", toValue: doc.status });
+          await logModerationEvent({ req, case: caseRef, actorId, action: "case-opened", toValue: doc.status });
           return;
         }
 
         if (previousDoc?.status !== doc.status) {
           await logModerationEvent({
             req,
-            case: doc.id,
+            case: caseRef,
             actorId,
             action: doc.status === "escalated" ? "escalated" : "status-changed",
             fromValue: previousDoc?.status,
@@ -192,7 +194,7 @@ export const ModerationCases: CollectionConfig = {
         if (decisionChanged) {
           await logModerationEvent({
             req,
-            case: doc.id,
+            case: caseRef,
             actorId,
             action: "decision-recorded",
             toValue: doc.decision,

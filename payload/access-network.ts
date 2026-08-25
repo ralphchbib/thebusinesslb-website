@@ -37,6 +37,19 @@ export function isNetworkAccount(user: unknown): user is { collection: string; i
   return Boolean(u && u.collection === "network-accounts");
 }
 
+/**
+ * Phase 14 — admin only, for the handful of actions restricted even from
+ * other staff roles (moderation escalation targets, first-offense
+ * suspensions). Phase 15 — moved here from access-moderation.ts (which
+ * re-exports it for backward compatibility) so access-verification.ts can
+ * depend on it too without either module importing the other — both sit
+ * above this one, neither depends on the other.
+ */
+export function isAdminRole(user: unknown): boolean {
+  const u = user as { collection?: string; role?: string } | null | undefined;
+  return Boolean(u && u.collection === "users" && u.role === "admin");
+}
+
 /** A network account can read/update only its own account; staff can read/update any. */
 export const ownAccountOrStaff: Access = ({ req: { user }, id }) => {
   if (isStaff(user)) return true;

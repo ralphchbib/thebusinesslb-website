@@ -29,6 +29,15 @@ export function VerificationRequestForm() {
         />
       </FormField>
 
+      <FormField
+        label="Supporting evidence"
+        htmlFor="evidence"
+        optional
+        helper="Business registration, ID, or a license — visible only to you and verification staff, never public."
+      >
+        <input id="evidence" name="evidence" type="file" accept="image/*,application/pdf" multiple className="text-sm" />
+      </FormField>
+
       {state.status === "error" && !state.fieldErrors && (
         <p className="text-[13px] text-error">{state.message}</p>
       )}

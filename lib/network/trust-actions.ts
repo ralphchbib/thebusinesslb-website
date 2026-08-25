@@ -33,6 +33,8 @@ async function getOwnProfile(userId: string | number, accountType: string) {
   return result.docs[0] ? { collection, doc: result.docs[0] } : null;
 }
 
+const RENEWAL_WINDOW_DAYS = 30;
+
 /**
  * Phase 10 — the statement-only MVP form (no document upload in this
  * pass, deliberately — the collection field exists for a future
@@ -43,6 +45,27 @@ async function getOwnProfile(userId: string | number, accountType: string) {
  * (`lib/cms/rate-limit.ts`), and adding per-kind configurability for one
  * edge case wasn't worth the change to shared infrastructure every other
  * flow depends on.
+ *
+ * Phase 15 — two extensions (PHASE15-TECHNICAL-DESIGN.md §D.1/§F.1/§G):
+ *
+ * 1. Evidence upload — one or more files, stored in the new
+ *    access-restricted `verification-evidence` collection rather than the
+ *    public-read `media` collection the legacy `document` field used
+ *    (PHASE15-RELEASE... see §G — this is the phase's central privacy fix,
+ *    not incidental to it). Reuses the exact `payload.create({..., file:
+ *    {data, mimetype, name, size}})` pattern `uploadIfPresent` already
+ *    established in `profile-actions.ts` for portfolio images.
+ *
+ * 2. Resubmission check widened from "block only while pending" to also
+ *    block while genuinely `under-review`, and to also block a fresh
+ *    submission while an *approved* verification is still comfortably
+ *    valid (more than `RENEWAL_WINDOW_DAYS` from `expiresAt`) — closing
+ *    `PHASE10-RELEASE-REVIEW.md`'s own open finding ("Verification
+ *    resubmission doesn't check for already-verified status") as a direct
+ *    side effect of building re-verification properly, not a separate fix.
+ *    A request within the renewal window, or one that was `rejected`/
+ *    `revoked`, is correctly allowed through as a genuine renewal cycle on
+ *    the same collection.
  */
 export async function submitVerificationRequestAction(
   _prev: TrustFormState,
@@ -69,17 +92,33 @@ export async function submitVerificationRequestAction(
   }
 
   const payload = await getCms();
-  const existingPending = await payload.find({
+  const existingActive = await payload.find({
     collection: "verification-requests",
-    where: { owner: { equals: user.id }, status: { equals: "pending" } },
+    where: { owner: { equals: user.id }, status: { in: ["pending", "under-review"] } },
     limit: 1,
     overrideAccess: true,
   });
-  if (existingPending.docs[0]) {
+  if (existingActive.docs[0]) {
     return { status: "error", message: "You already have a verification request pending review." };
   }
 
-  await payload.create({
+  const existingApproved = await payload.find({
+    collection: "verification-requests",
+    where: { owner: { equals: user.id }, status: { equals: "approved" } },
+    sort: "-createdAt",
+    limit: 1,
+    overrideAccess: true,
+  });
+  const currentApproval = existingApproved.docs[0];
+  if (currentApproval?.expiresAt) {
+    const renewalOpensAt = new Date(currentApproval.expiresAt as string);
+    renewalOpensAt.setDate(renewalOpensAt.getDate() - RENEWAL_WINDOW_DAYS);
+    if (Date.now() < renewalOpensAt.getTime()) {
+      return { status: "error", message: "Your verification is already active and not yet due for renewal." };
+    }
+  }
+
+  const created = await payload.create({
     collection: "verification-requests",
     data: {
       owner: user.id,
@@ -88,6 +127,17 @@ export async function submitVerificationRequestAction(
     },
     overrideAccess: true,
   });
+
+  const files = formData.getAll("evidence").filter((f): f is File => f instanceof File && f.size > 0);
+  for (const file of files) {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    await payload.create({
+      collection: "verification-evidence",
+      data: { request: created.id, uploadedBy: user.id, documentType: "other" },
+      file: { data: buffer, mimetype: file.type, name: file.name, size: file.size },
+      overrideAccess: true,
+    });
+  }
 
   return { status: "success", message: "Submitted — you'll be notified once it's reviewed." };
 }

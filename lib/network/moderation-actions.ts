@@ -10,6 +10,8 @@ export interface AppealFormState {
   message?: string;
 }
 
+const VALID_CASE_TYPES = new Set(["moderation-cases", "verification-requests"]);
+
 /**
  * Phase 14 — the network-account-facing half of the Appeals workflow
  * (PHASE14-TECHNICAL-DESIGN.md §E). Real authorization happens in
@@ -17,13 +19,24 @@ export interface AppealFormState {
  * check) via `overrideAccess: false` below — this action's own checks are
  * for a friendlier error message, the same division of responsibility
  * `updatePostingDetailsAction` (Phase 13) already established.
+ *
+ * Phase 15 — generalized for `Appeals.case`'s now-polymorphic shape
+ * (PHASE15-TECHNICAL-DESIGN.md §D.3/§H): the form now also supplies which
+ * collection the case belongs to, and the duplicate pre-check queries the
+ * derived `caseKey` field rather than `case` directly, matching the same
+ * reason `ModerationCases.targetKey` exists — Payload's polymorphic
+ * relationships aren't filterable by exact (relationTo, value) the way a
+ * plain field is.
  */
 export async function submitAppealAction(_prev: AppealFormState, formData: FormData): Promise<AppealFormState> {
   const user = await getNetworkUser();
   if (!user) return { status: "error", message: "Your session has expired. Please log in again." };
 
   const caseId = String(formData.get("caseId") ?? "");
-  if (!caseId) return { status: "error", message: "Something went wrong. Please try again." };
+  const caseType = String(formData.get("caseType") ?? "moderation-cases");
+  if (!caseId || !VALID_CASE_TYPES.has(caseType)) {
+    return { status: "error", message: "Something went wrong. Please try again." };
+  }
 
   const parsed = appealSchema.safeParse({ statement: formData.get("statement") });
   if (!parsed.success) {
@@ -31,10 +44,11 @@ export async function submitAppealAction(_prev: AppealFormState, formData: FormD
   }
 
   const payload = await getCms();
+  const caseKey = `${caseType}:${caseId}`;
 
   const existing = await payload.find({
     collection: "appeals",
-    where: { and: [{ case: { equals: caseId } }, { appellant: { equals: user.id } }] },
+    where: { and: [{ caseKey: { equals: caseKey } }, { appellant: { equals: user.id } }] },
     limit: 1,
     overrideAccess: true,
   });
@@ -45,7 +59,7 @@ export async function submitAppealAction(_prev: AppealFormState, formData: FormD
   try {
     await payload.create({
       collection: "appeals",
-      data: { case: Number(caseId), appellant: user.id, statement: parsed.data.statement },
+      data: { case: { relationTo: caseType, value: Number(caseId) }, appellant: user.id, statement: parsed.data.statement },
       user,
       overrideAccess: false,
     });
@@ -55,5 +69,6 @@ export async function submitAppealAction(_prev: AppealFormState, formData: FormD
   }
 
   revalidatePath("/dashboard/standing");
+  revalidatePath("/dashboard/verification");
   return { status: "success", message: "Appeal submitted — you'll be notified once it's reviewed." };
 }

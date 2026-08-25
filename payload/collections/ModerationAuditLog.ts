@@ -8,15 +8,33 @@ import { moderationStaffOnly, denyMutation } from "../access-moderation";
  * anyone, including admin — this is what makes the "documented
  * procedures" Blueprint §56 #10 requires actually auditable, not just a
  * UI convention a future refactor could quietly drop.
+ *
+ * Phase 15 — `case` widened to also accept `verification-requests`
+ * (PHASE15-TECHNICAL-DESIGN.md §D.4/§I): one shared, append-only
+ * governance ledger for both moderation and verification actions, rather
+ * than two parallel logs. `read`/`create` stay gated by
+ * `moderationStaffOnly` (unchanged) — VerificationRequests' own hooks
+ * write here with `overrideAccess: true`, the same way ModerationCases'
+ * hooks already do, so a `verification-officer` never needs direct create
+ * access to this collection for its own writes to succeed; officers read
+ * their own domain's entries via the read grant already in place.
+ *
+ * Disclosed naming tradeoff (§D.4): the collection is still named
+ * "Moderation Audit Log" though it now also carries verification
+ * actions — the same kind of scope-outgrowing-its-name precedent
+ * `ContentReports` already set (it covers messages and market postings
+ * too, not just "content" narrowly) without ever being renamed for it.
+ * The slug (what field references and API paths depend on) is unchanged;
+ * only the `admin.label` below is updated for clarity in the sidebar.
  */
 export const ModerationAuditLog: CollectionConfig = {
   slug: "moderation-audit-log",
-  labels: { singular: "Moderation Audit Entry", plural: "Moderation Audit Log" },
+  labels: { singular: "Governance Audit Entry", plural: "Governance Audit Log" },
   admin: {
     group: "Moderation",
     useAsTitle: "action",
     defaultColumns: ["case", "action", "actor", "createdAt"],
-    description: "Append-only. Nothing here can ever be edited or deleted, including by Admin.",
+    description: "Append-only. Nothing here can ever be edited or deleted, including by Admin. Covers both moderation and verification governance actions.",
   },
   access: {
     read: moderationStaffOnly,
@@ -25,7 +43,7 @@ export const ModerationAuditLog: CollectionConfig = {
     delete: denyMutation,
   },
   fields: [
-    { name: "case", type: "relationship", relationTo: "moderation-cases" },
+    { name: "case", type: "relationship", relationTo: ["moderation-cases", "verification-requests"] },
     { name: "actor", type: "relationship", relationTo: "users", admin: { description: "Null for system-automated entries (see `automated`)." } },
     { name: "automated", type: "checkbox", defaultValue: false },
     {
@@ -39,6 +57,10 @@ export const ModerationAuditLog: CollectionConfig = {
         { label: "Escalated", value: "escalated" },
         { label: "Appeal Submitted", value: "appeal-submitted" },
         { label: "Appeal Decided", value: "appeal-decided" },
+        { label: "Verification Submitted", value: "verification-submitted" },
+        { label: "Verification Decided", value: "verification-decided" },
+        { label: "Verification Revoked", value: "verification-revoked" },
+        { label: "Re-verification Requested", value: "re-verification-requested" },
       ],
     },
     { name: "fromValue", type: "text" },
