@@ -53,8 +53,32 @@ export const VerificationRequests: CollectionConfig = {
         const nextStatus = data.status ?? originalDoc?.status;
         const prevStatus = originalDoc?.status;
 
-        if (nextStatus === "under-review" && !("assignedTo" in data) && !originalDoc?.assignedTo) {
-          data.assignedTo = req.user?.id;
+        // PHASE15-REMEDIATION-PLAN.md §3 — Payload's Local API pre-populates
+        // `data` with every field key from the current document before this
+        // collection-level `beforeChange` hook runs (confirmed live via
+        // diagnostic logging: `"reviewNote" in data` and `"assignedTo" in
+        // data` are BOTH unconditionally true here, even on a bare
+        // `{ status: "under-review" }` update call) — so an `in`-key-presence
+        // check can never distinguish "the caller explicitly supplied this
+        // field" from "it's just carried over from the existing document."
+        // Both branches below were originally (and, for `assignedTo`,
+        // silently since Phase 15's first commit) written against an `in`
+        // check that can never fire; both are corrected here to key only on
+        // `originalDoc`'s actual state, which is the only reliable signal
+        // available at this point in the hook pipeline.
+        if (nextStatus === "under-review") {
+          if (!originalDoc?.assignedTo) {
+            data.assignedTo = req.user?.id;
+          }
+          // Clear any reviewNote left over from a prior decision cycle on
+          // this same row the moment it (re-)enters under-review, so the
+          // decision-note-required check below can never be silently
+          // satisfied by a stale, unrelated note. Only on genuine entry
+          // (prevStatus wasn't already under-review) — repeat edits to an
+          // already-under-review row don't touch it.
+          if (prevStatus !== "under-review") {
+            data.reviewNote = "";
+          }
         }
 
         if (DECIDED_STATUSES.has(nextStatus) && nextStatus !== prevStatus) {

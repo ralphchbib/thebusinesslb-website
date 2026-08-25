@@ -41,6 +41,21 @@ export function isModerationStaff(user: unknown): boolean {
 export const moderationStaffOnly: Access = ({ req: { user } }) => isModerationStaff(user);
 
 /**
+ * PHASE15-REMEDIATION-PLAN.md §2 — `ModerationAuditLog` read access.
+ * Moderation staff (admin/moderator) keep unrestricted read, unchanged from
+ * Phase 14 — narrowing that existing reach was not part of this fix and
+ * risks its own regression. Verification staff (admin/verification-officer)
+ * gain read access, but scoped to verification-domain entries only, not the
+ * full log — "do not broaden access unnecessarily." Admin satisfies
+ * `isModerationStaff` first and always gets unrestricted read either way.
+ */
+export const moderationOrVerificationAuditRead: Access = ({ req: { user } }) => {
+  if (isModerationStaff(user)) return true;
+  if (isVerificationStaff(user)) return { "case.relationTo": { equals: "verification-requests" } };
+  return false;
+};
+
+/**
  * PHASE14-REMEDIATION-PLAN.md §2 — ContentReports predates this phase and
  * is otherwise gated by `access-trust.ts`'s `staffOnlyRead`/
  * `staffOnlyUpdate` (i.e. `isStaff`, admin/editor). Moderator needs the
@@ -264,6 +279,8 @@ function isMatchingGovernanceStaff(user: unknown, collectionType: AppealCaseCont
 export const createAppeal: Access = async ({ req: { user, payload }, data }) => {
   const caseRef = (data as { case?: PolymorphicRef } | undefined)?.case;
   if (!caseRef?.relationTo || caseRef.value === undefined || caseRef.value === null) return false;
+  const domain = caseRef.relationTo === "moderation-cases" || caseRef.relationTo === "verification-requests" ? caseRef.relationTo : null;
+  if (!domain) return false;
 
   // PHASE14-REMEDIATION-V2-PLAN.md §"Secondary Hardening" — the duplicate-
   // appeal check below runs for every caller, including governance staff.
@@ -271,7 +288,17 @@ export const createAppeal: Access = async ({ req: { user, payload }, data }) => 
   // *their* appeal to own a deadline against — but "does one already
   // exist for this case" is not role-specific and never should be
   // skippable.
-  const isStaffCreator = isModerationStaff(user) || isVerificationStaff(user);
+  //
+  // PHASE15-REMEDIATION-PLAN.md §1 — the staff bypass below must be
+  // domain-matched, the same way `reviewAppeal` already matches domains via
+  // `isMatchingGovernanceStaff`: a moderator may only skip the ownership/
+  // deadline checks for a moderation-cases appeal, a verification-officer
+  // only for a verification-requests one. Reusing `isMatchingGovernanceStaff`
+  // here (rather than the previous `isModerationStaff(user) ||
+  // isVerificationStaff(user)` OR-across-domains check) closes the gap
+  // where either role could fabricate an appeal — bypassing ownership and
+  // deadline entirely — against a case in a domain it has no standing in.
+  const isStaffCreator = isMatchingGovernanceStaff(user, domain);
   if (!isStaffCreator) {
     if (!isNetworkAccount(user)) return false;
     const ctx = await resolveAppealCaseContext(payload, caseRef);

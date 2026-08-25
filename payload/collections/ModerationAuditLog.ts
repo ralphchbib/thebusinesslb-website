@@ -1,5 +1,5 @@
 import type { CollectionConfig } from "payload";
-import { moderationStaffOnly, denyMutation } from "../access-moderation";
+import { moderationStaffOnly, moderationOrVerificationAuditRead, denyMutation } from "../access-moderation";
 
 /**
  * Phase 14 — PHASE14-TECHNICAL-DESIGN.md §D.2/§G. Append-only: every
@@ -12,12 +12,18 @@ import { moderationStaffOnly, denyMutation } from "../access-moderation";
  * Phase 15 — `case` widened to also accept `verification-requests`
  * (PHASE15-TECHNICAL-DESIGN.md §D.4/§I): one shared, append-only
  * governance ledger for both moderation and verification actions, rather
- * than two parallel logs. `read`/`create` stay gated by
- * `moderationStaffOnly` (unchanged) — VerificationRequests' own hooks
- * write here with `overrideAccess: true`, the same way ModerationCases'
- * hooks already do, so a `verification-officer` never needs direct create
- * access to this collection for its own writes to succeed; officers read
- * their own domain's entries via the read grant already in place.
+ * than two parallel logs. `create` stays gated by `moderationStaffOnly`
+ * (unchanged) — VerificationRequests' own hooks write here with
+ * `overrideAccess: true`, the same way ModerationCases' hooks already do,
+ * so a `verification-officer` never needs direct create access to this
+ * collection for its own writes to succeed.
+ *
+ * PHASE15-REMEDIATION-PLAN.md §2 — `read` was originally left as
+ * `moderationStaffOnly` too, on the mistaken assumption (stated here, now
+ * corrected) that officers already had a read grant elsewhere. They didn't.
+ * `read` is now `moderationOrVerificationAuditRead`: moderation staff keep
+ * unrestricted read (unchanged), verification staff gain read scoped to
+ * verification-domain entries only.
  *
  * Disclosed naming tradeoff (§D.4): the collection is still named
  * "Moderation Audit Log" though it now also carries verification
@@ -37,7 +43,7 @@ export const ModerationAuditLog: CollectionConfig = {
     description: "Append-only. Nothing here can ever be edited or deleted, including by Admin. Covers both moderation and verification governance actions.",
   },
   access: {
-    read: moderationStaffOnly,
+    read: moderationOrVerificationAuditRead,
     create: moderationStaffOnly,
     update: denyMutation,
     delete: denyMutation,
