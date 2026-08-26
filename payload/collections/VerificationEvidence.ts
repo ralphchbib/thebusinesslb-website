@@ -24,19 +24,16 @@ export const VerificationEvidence: CollectionConfig = {
   },
   upload: {
     // Deliberately NOT registered with the vercelBlobStorage plugin (see
-    // payload.config.ts) — that plugin's `generateURL` returns a direct,
-    // unauthenticated public blob URL, which would recreate the exact
-    // privacy gap this collection exists to close (an unguessable-but-still-
-    // unauthenticated link instead of Payload's own per-request access
-    // control). Local-disk storage is the only adapter here whose static
-    // file route (`/api/verification-evidence/file/:filename`) actually
-    // invokes `access.read` on every request. The trade-off — local disk
-    // doesn't persist on Vercel's ephemeral serverless filesystem — is a
-    // real production-readiness gap, not silently accepted: see
-    // PHASE15-IMPLEMENTATION-REPORT.md's Security Results / known
-    // limitations section for what production go-live needs instead
-    // (private object storage with server-mediated, access-controlled
-    // reads — e.g. S3 with a signed-URL proxy — not a second blob adapter).
+    // payload.config.ts) — that plugin only supports public blob access,
+    // which would recreate the exact privacy gap this collection exists to
+    // close. In production, `verificationEvidencePrivateBlob()` (also in
+    // payload.config.ts, see PHASE15-EVIDENCE-STORAGE-REMEDIATION-PLAN.md)
+    // registers a custom adapter using Vercel Blob's `access: "private"`
+    // mode and sets `disableLocalStorage: true` here at runtime. `staticDir`
+    // below is the local-dev fallback only — no `BLOB_READ_WRITE_TOKEN`
+    // exists locally, so local dev keeps writing to a real, writable local
+    // filesystem exactly as before; only Vercel's read-only production
+    // serverless filesystem needed the swap away from local disk.
     staticDir: "verification-evidence-uploads",
     mimeTypes: ["image/*", "application/pdf"],
   },

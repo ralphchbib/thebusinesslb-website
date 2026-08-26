@@ -4,6 +4,7 @@ import { buildConfig } from "payload";
 import { postgresAdapter } from "@payloadcms/db-postgres";
 import { resendAdapter } from "@payloadcms/email-resend";
 import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";
+import { verificationEvidencePrivateBlob } from "@/payload/verification-evidence-blob-adapter";
 import sharp from "sharp";
 
 import { Users } from "@/payload/collections/Users";
@@ -145,6 +146,15 @@ export default buildConfig({
       collections: { media: true },
       token: process.env.BLOB_READ_WRITE_TOKEN,
     }),
+    // PHASE15-EVIDENCE-STORAGE-REMEDIATION-PLAN.md — VerificationEvidence
+    // deliberately does NOT use `vercelBlobStorage` above (that plugin only
+    // supports public blob access, which would defeat the whole point of
+    // this collection). This registers a separate, custom adapter using
+    // Vercel Blob's `access: "private"` mode instead — same conditional
+    // "only when the token exists" shape as `vercelBlobStorage` itself, so
+    // local dev (no token) is unaffected and keeps using the collection's
+    // own local-disk `staticDir` fallback.
+    verificationEvidencePrivateBlob(),
   ],
   // No collection here uses a `richText` field (long copy uses `textarea`,
   // matching the plain-string content model already in content/*.ts), so
