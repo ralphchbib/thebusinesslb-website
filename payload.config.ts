@@ -149,8 +149,11 @@ export default buildConfig({
     // PHASE15-EVIDENCE-STORAGE-REMEDIATION-PLAN.md — VerificationEvidence
     // deliberately does NOT use `vercelBlobStorage` above (that plugin only
     // supports public blob access, which would defeat the whole point of
-    // this collection). This registers a separate, custom adapter using
-    // Vercel Blob's `access: "private"` mode instead — same conditional
+    // this collection, and Media's public-access store rejects private
+    // writes outright regardless). This registers a separate, custom
+    // adapter against its own, separately-provisioned private Blob store
+    // (env var VERIFICATION_EVIDENCE_BLOB_TOKEN, deliberately distinct from
+    // BLOB_READ_WRITE_TOKEN above — one token per store) — same conditional
     // "only when the token exists" shape as `vercelBlobStorage` itself, so
     // local dev (no token) is unaffected and keeps using the collection's
     // own local-disk `staticDir` fallback.
