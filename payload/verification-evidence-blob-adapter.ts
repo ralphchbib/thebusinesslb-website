@@ -28,7 +28,7 @@ import { del, get, put } from "@vercel/blob";
 const BLOB_ACCESS = "private" as const;
 
 export const verificationEvidenceBlobAdapter: Adapter = ({ collection }) => {
-  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  const token = process.env.VERIFICATION_EVIDENCE_BLOB_TOKEN;
 
   const adapter: GeneratedAdapter = {
     name: "verification-evidence-private-blob",
@@ -94,20 +94,31 @@ export const verificationEvidenceBlobAdapter: Adapter = ({ collection }) => {
 };
 
 /**
- * Mirrors `vercelBlobStorage()`'s own conditional-enable shape exactly
- * (`payload.config.ts`'s existing comment on that plugin explains why: no
+ * Mirrors `vercelBlobStorage()`'s own conditional-enable shape (see
+ * `payload.config.ts`'s existing comment on that plugin: no
  * `BLOB_READ_WRITE_TOKEN` exists in local dev, so local dev keeps using
  * `VerificationEvidence.ts`'s own `staticDir` local-disk fallback — a
  * writable filesystem there, unlike Vercel's production serverless runtime
- * — completely unchanged from before this remediation). When a token *is*
- * present (production), this both registers the adapter above via the
- * lower-level `cloudStoragePlugin` and sets `disableLocalStorage: true` on
- * the collection — `cloudStoragePlugin` alone does not do the latter
- * automatically (confirmed by inspecting `vercelBlobStorage`'s own index.js,
- * which performs this exact same second step itself).
+ * — completely unchanged from before this remediation).
+ *
+ * `VERIFICATION_EVIDENCE_BLOB_TOKEN` is a deliberately separate token from
+ * `BLOB_READ_WRITE_TOKEN` — Vercel Blob tokens are scoped to one store each,
+ * and `Media`'s existing store is provisioned public-access, which rejects
+ * `access: "private"` writes outright ("Vercel Blob: Cannot use private
+ * access on a public store", confirmed live in production). This collection
+ * has its own dedicated, privately-provisioned store instead
+ * (`verification-evidence-private`), connected to this project under this
+ * variable name — see PHASE15-EVIDENCE-STORAGE-REMEDIATION-PLAN.md.
+ *
+ * When the token *is* present (production), this both registers the adapter
+ * above via the lower-level `cloudStoragePlugin` and sets
+ * `disableLocalStorage: true` on the collection — `cloudStoragePlugin` alone
+ * does not do the latter automatically (confirmed by inspecting
+ * `vercelBlobStorage`'s own index.js, which performs this exact same second
+ * step itself).
  */
 export const verificationEvidencePrivateBlob = (): Plugin => (incomingConfig: Config) => {
-  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  const token = process.env.VERIFICATION_EVIDENCE_BLOB_TOKEN;
   if (!token) return incomingConfig;
 
   const withDisabledLocalStorage: Config = {
