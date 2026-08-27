@@ -38,6 +38,10 @@ import { ModerationCases } from "@/payload/collections/ModerationCases";
 import { ModerationAuditLog } from "@/payload/collections/ModerationAuditLog";
 import { Appeals } from "@/payload/collections/Appeals";
 import { VerificationEvidence } from "@/payload/collections/VerificationEvidence";
+import { CrmContacts } from "@/payload/collections/CrmContacts";
+import { CrmLeads } from "@/payload/collections/CrmLeads";
+import { CrmActivity } from "@/payload/collections/CrmActivity";
+import { CrmTasks } from "@/payload/collections/CrmTasks";
 import { SiteSettings } from "@/payload/globals/SiteSettings";
 import { Homepage } from "@/payload/globals/Homepage";
 import { siteConfig } from "@/lib/config";
@@ -123,6 +127,10 @@ export default buildConfig({
     ModerationAuditLog,
     Appeals,
     VerificationEvidence,
+    CrmContacts,
+    CrmLeads,
+    CrmActivity,
+    CrmTasks,
   ],
   globals: [SiteSettings, Homepage],
   sharp,
