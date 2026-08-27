@@ -121,11 +121,11 @@ Same four pre-existing, unrelated tests every prior phase's report notes — no 
 
 ## G. Commit Hash
 
-<!-- filled in after commit -->
+`579921d`
 
 ## H. PR URL
 
-<!-- filled in after PR creation -->
+[https://github.com/ralphchbib/thebusinesslb-website/pull/30](https://github.com/ralphchbib/thebusinesslb-website/pull/30)
 
 ## I. Release Review Recommendation
 
