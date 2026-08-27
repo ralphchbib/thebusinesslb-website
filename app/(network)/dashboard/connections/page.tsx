@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getNetworkUser } from "@/lib/network/session";
 import { getIncomingPendingConnections, getOutgoingPendingConnections, getAcceptedConnections, type ConnectionType } from "@/lib/network/messaging";
 import { ConnectionResponseButtons } from "@/components/network/connection-response-buttons";
+import { AddToCrmButton } from "@/components/network/crm/add-to-crm-button";
 
 export const metadata: Metadata = { title: "Connections" };
 
@@ -92,8 +93,9 @@ export default async function ConnectionsPage() {
                 <h3 className="text-[13px] font-semibold uppercase tracking-wide text-n500">{CONNECTION_TYPE_LABELS[type]}</h3>
                 <div className="mt-2 flex flex-col gap-2">
                   {items.map((item) => (
-                    <div key={item.id} className="rounded-md border border-n200 p-3 text-[14px] text-ink">
-                      {item.counterpart.name}
+                    <div key={item.id} className="flex items-center justify-between rounded-md border border-n200 p-3 text-[14px] text-ink">
+                      <span>{item.counterpart.name}</span>
+                      {user.accountType === "business" && <AddToCrmButton connectionId={item.id} />}
                     </div>
                   ))}
                 </div>

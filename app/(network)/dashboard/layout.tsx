@@ -45,6 +45,15 @@ import { DashboardNav } from "@/components/network/dashboard-nav";
  * Phase 14 — Account Standing is added as a sixth universal item: any
  * account type can file a report or be the subject of a moderation case
  * (PHASE14-TECHNICAL-DESIGN.md §E).
+ *
+ * Phase 16 — Leads is added, business accounts only: Blueprint §38's own
+ * SaaS Dashboard Structure lists "Leads" under Business Dashboard Sections
+ * specifically, not Professional or Consumer (PHASE16-TECHNICAL-DESIGN.md
+ * §L). Every `/dashboard/leads*` route independently redirects a non-
+ * business account back to `/dashboard` — this nav gate is a convenience,
+ * not the enforcement (the real enforcement is each page's own
+ * `accountType !== "business"` check plus `access-crm.ts`'s ownership
+ * scoping, which would reject a non-owner's data either way).
  */
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getNetworkUser();
@@ -70,6 +79,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     { href: "/dashboard/connections", label: "Connections" },
     { href: "/dashboard/messages", label: user.accountType === "business" ? "Inbox" : "Messages", badge: unreadCount },
     { href: "/dashboard/opportunities", label: "Opportunities" },
+    ...(user.accountType === "business" ? [{ href: "/dashboard/leads", label: "Leads" }] : []),
     { href: "/dashboard/standing", label: "Account Standing" },
     { href: "/dashboard/settings", label: "Settings" },
   ];
