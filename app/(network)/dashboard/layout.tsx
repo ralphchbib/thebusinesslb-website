@@ -80,6 +80,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     { href: "/dashboard/messages", label: user.accountType === "business" ? "Inbox" : "Messages", badge: unreadCount },
     { href: "/dashboard/opportunities", label: "Opportunities" },
     ...(user.accountType === "business" ? [{ href: "/dashboard/leads", label: "Leads" }] : []),
+    ...(user.accountType === "institution" ? [{ href: "/network/market-pulse", label: "Market Pulse" }] : []),
     { href: "/dashboard/standing", label: "Account Standing" },
     { href: "/dashboard/settings", label: "Settings" },
   ];

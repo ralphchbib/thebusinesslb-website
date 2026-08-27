@@ -106,6 +106,35 @@ export const NetworkAccounts: CollectionConfig = {
         }
       },
     ],
+    beforeChange: [
+      // Phase 17 — PHASE17-TECHNICAL-DESIGN.md §F/§G: auto-stamps the audit
+      // trail when staff grants/revokes institutional Market Pulse access,
+      // the same "side-effect only, sets a derived field on a state
+      // transition" shape CrmLeads.ts's `closedAt` hook already established
+      // (its `access.update: noUpdateAfterCreate` field guard is what makes
+      // this the ONLY path either field can ever change through — staff
+      // toggles `marketPulseAccessGranted`, never these two directly).
+      ({ data, originalDoc, operation, req }) => {
+        if (operation !== "update") return data;
+        const nextGranted = data?.marketPulseAccessGranted;
+        if (nextGranted === undefined) return data;
+        const prevGranted = originalDoc?.marketPulseAccessGranted ?? false;
+        if (nextGranted === prevGranted) return data;
+        if (nextGranted) {
+          // `req.user` is typed by Payload's generated per-collection types,
+          // which don't include the runtime-only `collection` discriminator
+          // — the same gap access-network.ts's `isStaff`/`isNetworkAccount`
+          // already cast around.
+          const actingUser = req.user as unknown as { collection?: string; id?: string | number } | null | undefined;
+          data.marketPulseAccessGrantedAt = new Date().toISOString();
+          data.marketPulseAccessGrantedBy = actingUser?.collection === "users" ? actingUser.id : null;
+        } else {
+          data.marketPulseAccessGrantedAt = null;
+          data.marketPulseAccessGrantedBy = null;
+        }
+        return data;
+      },
+    ],
   },
   fields: [
     {
@@ -167,6 +196,28 @@ export const NetworkAccounts: CollectionConfig = {
       admin: {
         description: "Phase 12 — Blueprint §56: \"Users must control communications and notifications.\" Gates the new-message email only; owner-editable via /dashboard/settings.",
       },
+    },
+    {
+      name: "marketPulseAccessGranted",
+      type: "checkbox",
+      defaultValue: false,
+      access: { update: staffOnlyField },
+      admin: {
+        description: "Phase 17 — Blueprint §37 \"Paid Institutional Dashboards.\" Staff-granted only (no self-service, no billing integration in this phase — see PHASE17-TECHNICAL-DESIGN.md §F). Only meaningful when accountType is 'institution'; the read-access gate in access-market-pulse.ts checks both.",
+      },
+    },
+    {
+      name: "marketPulseAccessGrantedAt",
+      type: "date",
+      access: { update: () => false },
+      admin: { description: "Set automatically when a staff member checks marketPulseAccessGranted above — never client-writable directly, including by staff. Audit trail." },
+    },
+    {
+      name: "marketPulseAccessGrantedBy",
+      type: "relationship",
+      relationTo: "users",
+      access: { update: () => false },
+      admin: { description: "The staff user who granted institutional Market Pulse access — set automatically, never client-writable directly. Audit trail." },
     },
   ],
 };
