@@ -198,6 +198,25 @@ export interface CrmTaskItem {
   lead: { id: string | number; title: string } | null;
 }
 
+/**
+ * PHASE16-REMEDIATION-PLAN.md §2/§5, PHASE16-RELEASE-REVIEW.md Finding 1's
+ * fix-scope recommendation #3 — `belongsToOwner` is a defense-in-depth
+ * check, independent of the write-side `assertOwnedReference` validation
+ * now enforced in `CrmTasks.ts`'s `beforeValidate`. This function's own
+ * `overrideAccess: true` at `depth: 1` means Payload will populate and
+ * return a related document's fields regardless of who owns it — the
+ * write-side fix should make a foreign reference impossible to create in
+ * the first place, but this check means the read helper never *displays*
+ * one even if that invariant is ever violated by a future write path
+ * (e.g. a bulk import, an admin action, or a bug elsewhere) that also uses
+ * `overrideAccess: true` and bypasses the hook.
+ */
+function belongsToOwner(doc: { owner?: unknown } | null | undefined, ownerId: string | number): boolean {
+  if (!doc) return false;
+  const docOwnerId = typeof doc.owner === "object" ? (doc.owner as { id?: unknown } | null)?.id : doc.owner;
+  return String(docOwnerId) === String(ownerId);
+}
+
 export async function getCrmOpenTasks(ownerId: string | number): Promise<CrmTaskItem[]> {
   const payload = await getCms();
   const result = await payload.find({
@@ -209,15 +228,17 @@ export async function getCrmOpenTasks(ownerId: string | number): Promise<CrmTask
     overrideAccess: true,
   });
   return result.docs.map((doc) => {
-    const contact = doc.contact as { id?: unknown; name?: string } | number | string | null;
-    const lead = doc.lead as { id?: unknown; title?: string } | number | string | null;
+    const contact = doc.contact as ({ id?: unknown; name?: string; owner?: unknown } | number | string | null);
+    const lead = doc.lead as ({ id?: unknown; title?: string; owner?: unknown } | number | string | null);
+    const contactObj = typeof contact === "object" && contact !== null ? contact : null;
+    const leadObj = typeof lead === "object" && lead !== null ? lead : null;
     return {
       id: doc.id as string | number,
       title: doc.title as string,
       dueAt: doc.dueAt as string,
       status: doc.status as CrmTaskItem["status"],
-      contact: contact ? { id: typeof contact === "object" ? ((contact.id ?? "") as string | number) : contact, name: typeof contact === "object" ? ((contact.name as string) ?? "") : "" } : null,
-      lead: lead ? { id: typeof lead === "object" ? ((lead.id ?? "") as string | number) : lead, title: typeof lead === "object" ? ((lead.title as string) ?? "") : "" } : null,
+      contact: contactObj && belongsToOwner(contactObj, ownerId) ? { id: (contactObj.id ?? "") as string | number, name: (contactObj.name as string) ?? "" } : null,
+      lead: leadObj && belongsToOwner(leadObj, ownerId) ? { id: (leadObj.id ?? "") as string | number, title: (leadObj.title as string) ?? "" } : null,
     };
   });
 }

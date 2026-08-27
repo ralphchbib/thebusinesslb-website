@@ -1,6 +1,7 @@
 import type { CollectionConfig } from "payload";
 import { readOwnCrmActivity, createCrmActivityNote, denyCrmActivityMutation } from "../access-crm";
 import { noUpdateAfterCreate } from "../access-trust";
+import { assertOwnedReference } from "../crm-ownership";
 
 /**
  * Phase 16 — Blueprint §39 CRM Lite's Notes and Contact Timeline
@@ -16,6 +17,15 @@ import { noUpdateAfterCreate } from "../access-trust";
  * governance, scoped here to owner-domain rather than staff-domain. A
  * timeline that could be quietly edited after the fact would defeat the
  * one property that makes it worth having.
+ *
+ * PHASE16-REMEDIATION-PLAN.md §4 — `contact`/`lead` were never validated
+ * against `owner` at create time, the same defect class `CrmTasks.ts` had
+ * (PHASE16-RELEASE-REVIEW.md Finding 2) — not currently exploitable, since
+ * `getCrmContactTimeline` filters by the entry's own `owner` before ever
+ * populating anything, so a forged entry was never visible to anyone but
+ * its own forger. Fixed anyway, before any future read path changes that.
+ * `update`/`delete` were already unconditionally denied at the collection
+ * level, so this only ever mattered at create time.
  */
 export const CrmActivity: CollectionConfig = {
   slug: "crm-activity",
@@ -31,6 +41,16 @@ export const CrmActivity: CollectionConfig = {
     create: createCrmActivityNote,
     update: denyCrmActivityMutation,
     delete: denyCrmActivityMutation,
+  },
+  hooks: {
+    beforeValidate: [
+      async ({ data, operation, req }) => {
+        if (operation !== "create") return data;
+        await assertOwnedReference({ req, collection: "crm-contacts", refValue: data?.contact, expectedOwnerId: data?.owner, fieldLabel: "activity entry's contact" });
+        await assertOwnedReference({ req, collection: "crm-leads", refValue: data?.lead, expectedOwnerId: data?.owner, fieldLabel: "activity entry's lead" });
+        return data;
+      },
+    ],
   },
   fields: [
     {

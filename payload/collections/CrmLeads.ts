@@ -2,6 +2,7 @@ import type { CollectionConfig } from "payload";
 import { readOwnCrmRecord, createOwnCrmRecord, updateOwnCrmRecord, deleteOwnCrmRecord, crmLeadStageFieldAccess } from "../access-crm";
 import { noUpdateAfterCreate } from "../access-trust";
 import { logCrmActivity } from "../crm-activity";
+import { assertOwnedReference } from "../crm-ownership";
 
 const STAGE_LABELS: Record<string, string> = {
   new: "New",
@@ -23,10 +24,15 @@ const STAGE_LABELS: Record<string, string> = {
  * distinct row type.
  *
  * `contact` ownership is re-validated server-side in `beforeValidate`
- * below, not trusted from client input — the same class of check
+ * below via the shared `assertOwnedReference` helper (`payload/crm-
+ * ownership.ts`), not trusted from client input — the same class of check
  * `access-market.ts`'s hard-delete function re-derives server-side rather
  * than trusting the UI (Phase 13's own precedent). Without it, account A
- * could attach a lead to account B's contact by guessing an id.
+ * could attach a lead to account B's contact by guessing an id. This was
+ * originally the one collection in CRM Lite with this check — `CrmTasks`/
+ * `CrmActivity` were built afterward without it, a gap
+ * PHASE16-RELEASE-REVIEW.md's Finding 1 traced directly to this check
+ * never having been extracted into a shared, reusable form. It now is.
  */
 export const CrmLeads: CollectionConfig = {
   slug: "crm-leads",
@@ -46,15 +52,8 @@ export const CrmLeads: CollectionConfig = {
   hooks: {
     beforeValidate: [
       async ({ data, operation, req }) => {
-        if (operation !== "create" || !data?.contact) return data;
-        const contactId = typeof data.contact === "object" ? (data.contact as { value?: unknown }).value : data.contact;
-        const contact = await req.payload
-          .findByID({ collection: "crm-contacts", id: contactId as string | number, depth: 0, overrideAccess: true })
-          .catch(() => null);
-        const contactOwnerId = contact ? (typeof contact.owner === "object" ? (contact.owner as { id?: unknown })?.id : contact.owner) : null;
-        if (!contact || String(contactOwnerId) !== String(data.owner)) {
-          throw new Error("A lead's contact must belong to the same account.");
-        }
+        if (operation !== "create") return data;
+        await assertOwnedReference({ req, collection: "crm-contacts", refValue: data?.contact, expectedOwnerId: data?.owner, fieldLabel: "lead's contact" });
         return data;
       },
     ],
