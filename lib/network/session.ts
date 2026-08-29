@@ -51,6 +51,7 @@ export type NetworkUser = {
   diasporaCountry?: string | null;
   status: "active" | "suspended";
   messageEmailNotifications?: boolean;
+  marketPulseAccessGranted?: boolean;
 };
 
 /**
