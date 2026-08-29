@@ -48,7 +48,17 @@ export const InstitutionMemberships: CollectionConfig = {
   hooks: {
     beforeValidate: [
       async ({ data, operation, req }) => {
-        if (operation !== "create") return data;
+        if (operation !== "create" || !data) return data;
+        // PHASE18A-REMEDIATION-PLAN.md §Fix #1, Layer 2 — unconditionally
+        // forced to "pending" on every create, independent of
+        // `createInstitutionMembership`'s own equivalent rejection (Layer
+        // 1). Defense-in-depth: any future internal writer that ever calls
+        // `payload.create` on this collection with `overrideAccess: true`
+        // (bypassing Layer 1 entirely, the same way every other writer in
+        // this codebase's own `payload/*.ts` helpers already does) still
+        // cannot produce a non-pending row, because this hook runs
+        // regardless of `overrideAccess`.
+        data.status = "pending";
         await assertAccountType({ req, accountId: data?.institution, allowedTypes: ["institution"], fieldLabel: "institution" });
         await assertAccountType({ req, accountId: data?.member, allowedTypes: ["business", "professional"], fieldLabel: "member" });
         return data;

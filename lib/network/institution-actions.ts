@@ -31,6 +31,21 @@ async function findAccountByEmail(email: string) {
 }
 
 /**
+ * PHASE18A-REMEDIATION-PLAN.md §3/§Fix #2 — the one outward message this
+ * action ever returns once past the acting user's *own* input (email
+ * format, self-targeting, throttling — none of which reveal anything
+ * about a third party). Whether the target doesn't exist, isn't eligible,
+ * already has a relationship, or the invite genuinely succeeded, the
+ * caller sees the identical response. Mirrors `lib/network/actions.ts`'s
+ * forgot-password flow precedent exactly (`"If that email is registered,
+ * a reset link is on its way"`, unconditionally) — the property being
+ * copied is "the response must not function as an oracle for a third
+ * party's account," not any particular wording.
+ */
+const INVITE_GENERIC_MESSAGE = "If that account exists and is eligible to be invited, an invitation has been sent.";
+const REQUEST_GENERIC_MESSAGE = "If that account exists and is an institution, your request has been sent.";
+
+/**
  * The institution side of §C's request flow — an institution looks up a
  * business/professional by email and invites them. `requestedBy` is
  * always the acting (institution) account; the target must accept before
@@ -57,37 +72,40 @@ export async function inviteMemberAction(_prev: InstitutionFormState, formData: 
   const allowed = await checkThrottle("network-institution-membership");
   if (!allowed) return { status: "error", message: "Too many requests from this connection. Try again shortly." };
 
-  const target = await findAccountByEmail(parsed.data.targetEmail);
-  if (!target) return { status: "error", message: "No account found with that email address." };
-  if (target.accountType !== "business" && target.accountType !== "professional") {
-    return { status: "error", message: "Only business or professional accounts can be invited as members." };
+  if (parsed.data.targetEmail.toLowerCase() === user.email.toLowerCase()) {
+    return { status: "error", message: "You can't invite yourself." };
   }
-  if (String(target.id) === String(user.id)) return { status: "error", message: "You can't invite yourself." };
 
-  const payload = await getCms();
+  // Everything from here on converges to INVITE_GENERIC_MESSAGE regardless
+  // of outcome — not-found, wrong account type, already-related, and
+  // genuine success are all indistinguishable to the caller.
   try {
-    await payload.create({
-      collection: "institution-memberships",
-      data: {
-        institution: user.id,
-        member: target.id,
-        requestedBy: user.id,
-        role: parsed.data.role,
-        status: "pending",
-      },
-      user,
-      overrideAccess: false,
-    });
-  } catch (err) {
-    if (isDuplicateMembershipError(err)) {
-      return { status: "error", message: "That account is already a member, or already has a pending request." };
+    const target = await findAccountByEmail(parsed.data.targetEmail);
+    if (target && (target.accountType === "business" || target.accountType === "professional")) {
+      const payload = await getCms();
+      await payload
+        .create({
+          collection: "institution-memberships",
+          data: {
+            institution: user.id,
+            member: target.id,
+            requestedBy: user.id,
+            role: parsed.data.role,
+            status: "pending",
+          },
+          user,
+          overrideAccess: false,
+        })
+        .catch((err: unknown) => {
+          if (!isDuplicateMembershipError(err)) console.error("[institution:invite:error]", err);
+        });
     }
-    console.error("[institution:invite:error]", err);
-    return { status: "error", message: "Something went wrong. Please try again." };
+  } catch (err) {
+    console.error("[institution:invite:lookup-error]", err);
   }
 
   revalidatePath("/dashboard/institution/members");
-  return { status: "success", message: "Invitation sent." };
+  return { status: "success", message: INVITE_GENERIC_MESSAGE };
 }
 
 /**
@@ -115,34 +133,38 @@ export async function requestToJoinAction(_prev: InstitutionFormState, formData:
   const allowed = await checkThrottle("network-institution-membership");
   if (!allowed) return { status: "error", message: "Too many requests from this connection. Try again shortly." };
 
-  const target = await findAccountByEmail(parsed.data.targetEmail);
-  if (!target) return { status: "error", message: "No institution found with that email address." };
-  if (target.accountType !== "institution") return { status: "error", message: "That account is not an institution." };
-  if (String(target.id) === String(user.id)) return { status: "error", message: "You can't request to join yourself." };
+  if (parsed.data.targetEmail.toLowerCase() === user.email.toLowerCase()) {
+    return { status: "error", message: "You can't request to join yourself." };
+  }
 
-  const payload = await getCms();
+  // Everything from here on converges to REQUEST_GENERIC_MESSAGE regardless
+  // of outcome — see inviteMemberAction's identical reasoning above.
   try {
-    await payload.create({
-      collection: "institution-memberships",
-      data: {
-        institution: target.id,
-        member: user.id,
-        requestedBy: user.id,
-        status: "pending",
-      },
-      user,
-      overrideAccess: false,
-    });
-  } catch (err) {
-    if (isDuplicateMembershipError(err)) {
-      return { status: "error", message: "You're already a member, or already have a pending request with that institution." };
+    const target = await findAccountByEmail(parsed.data.targetEmail);
+    if (target && target.accountType === "institution") {
+      const payload = await getCms();
+      await payload
+        .create({
+          collection: "institution-memberships",
+          data: {
+            institution: target.id,
+            member: user.id,
+            requestedBy: user.id,
+            status: "pending",
+          },
+          user,
+          overrideAccess: false,
+        })
+        .catch((err: unknown) => {
+          if (!isDuplicateMembershipError(err)) console.error("[institution:request:error]", err);
+        });
     }
-    console.error("[institution:request:error]", err);
-    return { status: "error", message: "Something went wrong. Please try again." };
+  } catch (err) {
+    console.error("[institution:request:lookup-error]", err);
   }
 
   revalidatePath("/dashboard/institutions");
-  return { status: "success", message: "Request sent." };
+  return { status: "success", message: REQUEST_GENERIC_MESSAGE };
 }
 
 /** Accept/decline — only the non-requesting party may respond, matching `respondToConnectionRequestAction`'s exact shape. */

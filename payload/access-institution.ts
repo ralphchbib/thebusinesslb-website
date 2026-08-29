@@ -52,6 +52,17 @@ export const createInstitutionMembership: Access = ({ req: { user }, data }) => 
   if (!data?.institution || !data?.member) return false;
   if (String(data.institution) === String(data.member)) return false;
   if (String(data?.requestedBy) !== String(user.id)) return false;
+  // PHASE18A-REMEDIATION-PLAN.md §1/§2, Fix #1 — a client-supplied `status`
+  // other than the safe starting value is rejected outright. Before this
+  // check, nothing here (or anywhere else in this collection's access
+  // stack) ever inspected `data.status` on create — `status`'s own field-
+  // level guard (`institutionMembershipStatusFieldAccess`) only governs the
+  // *update* operation, so a direct create call with `status: "active"`
+  // sailed straight through, instantly fabricating a membership neither
+  // party had actually agreed to (live-reproduced in both directions in
+  // PHASE18A-RELEASE-REVIEW.md §C.1). `undefined` is fine — the field's
+  // own `defaultValue: "pending"` fills it in.
+  if (data?.status !== undefined && data.status !== "pending") return false;
   const isInstitutionParty = String(data.institution) === String(user.id);
   const isMemberParty = String(data.member) === String(user.id);
   return isInstitutionParty || isMemberParty;
