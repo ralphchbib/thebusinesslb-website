@@ -54,6 +54,16 @@ import { DashboardNav } from "@/components/network/dashboard-nav";
  * not the enforcement (the real enforcement is each page's own
  * `accountType !== "business"` check plus `access-crm.ts`'s ownership
  * scoping, which would reject a non-owner's data either way).
+ *
+ * Phase 18A — "Institutions" (member-side: institutions I belong to) is
+ * added for the same `hasProfile` group Profile/Portfolio already use —
+ * only Business/Professional accounts can be institution members
+ * (PHASE18-TECHNICAL-DESIGN.md §C). "Institution" (institution-side:
+ * manage my members) is added for `accountType === "institution"` only,
+ * alongside the existing Phase 17 Market Pulse link. Same convenience-
+ * gate-not-enforcement relationship as Leads above — `/dashboard/
+ * institution*` routes redirect independently, and `access-institution.ts`
+ * scopes reads/writes regardless of what the nav shows.
  */
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getNetworkUser();
@@ -80,6 +90,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     { href: "/dashboard/messages", label: user.accountType === "business" ? "Inbox" : "Messages", badge: unreadCount },
     { href: "/dashboard/opportunities", label: "Opportunities" },
     ...(user.accountType === "business" ? [{ href: "/dashboard/leads", label: "Leads" }] : []),
+    ...(hasProfile ? [{ href: "/dashboard/institutions", label: "Institutions" }] : []),
+    ...(user.accountType === "institution" ? [{ href: "/dashboard/institution", label: "Institution" }] : []),
     ...(user.accountType === "institution" ? [{ href: "/network/market-pulse", label: "Market Pulse" }] : []),
     { href: "/dashboard/standing", label: "Account Standing" },
     { href: "/dashboard/settings", label: "Settings" },

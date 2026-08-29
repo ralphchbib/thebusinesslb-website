@@ -43,6 +43,7 @@ import { CrmLeads } from "@/payload/collections/CrmLeads";
 import { CrmActivity } from "@/payload/collections/CrmActivity";
 import { CrmTasks } from "@/payload/collections/CrmTasks";
 import { MarketInsightSnapshots } from "@/payload/collections/MarketInsightSnapshots";
+import { InstitutionMemberships } from "@/payload/collections/InstitutionMemberships";
 import { SiteSettings } from "@/payload/globals/SiteSettings";
 import { Homepage } from "@/payload/globals/Homepage";
 import { siteConfig } from "@/lib/config";
@@ -133,6 +134,7 @@ export default buildConfig({
     CrmActivity,
     CrmTasks,
     MarketInsightSnapshots,
+    InstitutionMemberships,
   ],
   globals: [SiteSettings, Homepage],
   sharp,
