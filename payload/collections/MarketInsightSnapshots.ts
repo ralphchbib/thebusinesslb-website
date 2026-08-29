@@ -68,6 +68,6 @@ export const MarketInsightSnapshots: CollectionConfig = {
       admin: { description: "Array of {label, count, group?}. Aggregate counts only — never a reference to an individual profile, posting, or CRM record." },
     },
     { name: "suppressedCount", type: "number", defaultValue: 0, admin: { description: "How many candidate buckets were withheld by the k-anonymity threshold this compute. Never reveals which ones — a transparency figure only." } },
-    { name: "totalContributingRecords", type: "number", defaultValue: 0, admin: { description: "Sum of counts across every bucket that was kept. Not itself a bucket, and not suppressible — it never identifies an individual record." } },
+    { name: "totalContributingRecords", type: "number", defaultValue: 0, admin: { description: "Sum of counts across every kept bucket that represents an actual record count — excludes any `group: \"rate\"` bucket, which holds a computed percentage, not a count. Not itself a bucket, and not suppressible — it never identifies an individual record." } },
   ],
 };

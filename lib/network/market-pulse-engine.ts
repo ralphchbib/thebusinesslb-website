@@ -120,7 +120,15 @@ function topN(buckets: Bucket[], n: number): Bucket[] {
  * created) and updates it instead.
  */
 async function upsertSnapshot(payload: BasePayload, insightType: string, tier: "public" | "institutional", buckets: Bucket[], suppressedCount: number): Promise<void> {
-  const totalContributingRecords = buckets.reduce((sum, b) => sum + b.count, 0);
+  // PHASE17-REMEDIATION-PLAN.md §Fix #2 — `totalContributingRecords` is
+  // documented as a sum of record counts. `group: "rate"` buckets hold a
+  // computed percentage, not a record count (the only insight type that
+  // ever produces one is `computeCrmAggregateInsights`'s won-rate) — summing
+  // it in here alongside genuine lead/contact counts previously produced a
+  // meaningless mixed-unit total (e.g. 20 leads + 20 contacts + 80% = 120).
+  // Excluded generically by group, not by insightType, so any future
+  // derived-percentage bucket is covered by construction.
+  const totalContributingRecords = buckets.filter((b) => b.group !== "rate").reduce((sum, b) => sum + b.count, 0);
   const data = {
     insightType,
     tier,
@@ -244,7 +252,23 @@ async function computeCrmAggregateInsights(payload: BasePayload, crmLeadDocs: Re
   const wonCount = crmLeadDocs.filter((d) => d.stage === "won").length;
   const lostCount = crmLeadDocs.filter((d) => d.stage === "lost").length;
   const closedCount = wonCount + lostCount;
-  const rateBucket: Bucket[] = closedCount >= CRM_THRESHOLD ? [{ label: "Network-wide won rate (%)", count: Math.round((wonCount / closedCount) * 100), group: "rate" }] : [];
+  // PHASE17-REMEDIATION-PLAN.md §1/§2/§4 — a derived metric is only safe to
+  // publish when EVERY value it is computed from has independently cleared
+  // suppression, not when their sum happens to. The original gate here
+  // checked `closedCount >= CRM_THRESHOLD` (the sum) — but a rate is a
+  // reversible encoding of its two inputs: publishing `wonCount` (already
+  // shown, on its own >= threshold) alongside `rate` lets `lostCount` be
+  // recovered exactly via `wonCount * (1 - rate) / rate`, even when
+  // `lostCount` itself never cleared the threshold and was correctly
+  // withheld from `buckets`. Live-reproduced in PHASE17-RELEASE-REVIEW.md
+  // §C.2 (20 won / 5 lost → rate 80% → lostCount recovered exactly as 5).
+  // Fixed by requiring BOTH operands to individually clear the threshold —
+  // the same per-value rule `suppress()` already applies to every ordinary
+  // bucket, now applied to this derived one too.
+  const rateBucket: Bucket[] =
+    wonCount >= CRM_THRESHOLD && lostCount >= CRM_THRESHOLD
+      ? [{ label: "Network-wide won rate (%)", count: Math.round((wonCount / closedCount) * 100), group: "rate" }]
+      : [];
 
   await Promise.all([
     upsertSnapshot(payload, "crm-aggregate", "public", stageKept, stageSuppressed),
