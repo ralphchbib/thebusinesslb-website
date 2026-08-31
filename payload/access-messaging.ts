@@ -45,7 +45,21 @@ export const createConnection: Access = ({ req: { user }, data }) => {
   if (String(data.accountA) === String(data.accountB)) return false;
   const isSelfInvolved = String(data.accountA) === String(user.id) || String(data.accountB) === String(user.id);
   if (!isSelfInvolved) return false;
-  return String(data?.requestedBy) === String(user.id);
+  if (String(data?.requestedBy) !== String(user.id)) return false;
+  // PHASE12-CONNECTIONS-REMEDIATION-PLAN.md §1/§2, Fix Layer 1 — a client-
+  // supplied `status` other than the safe starting value is rejected
+  // outright. Before this check, nothing here (or anywhere else in this
+  // collection's access stack) ever inspected `data.status` on create —
+  // `respondToConnection` below only governs the *update* operation, so a
+  // direct create call with `status: "accepted"` sailed straight through,
+  // instantly fabricating a connection neither party had actually agreed
+  // to (live-reproduced in both directions in
+  // CONNECTIONS-STATUS-BYPASS-FINDING.md §2 — the same gap
+  // `createInstitutionMembership` had before its own Phase 18A fix,
+  // applied here identically). `undefined` is fine — the field's own
+  // `defaultValue: "pending"` fills it in.
+  if (data?.status !== undefined && data.status !== "pending") return false;
+  return true;
 };
 
 /**
