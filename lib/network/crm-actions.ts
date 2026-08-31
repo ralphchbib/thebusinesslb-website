@@ -107,7 +107,7 @@ export async function addConnectionToCrmAction(_prev: CrmFormState, formData: Fo
     if (existing.docs[0]) {
       contactId = existing.docs[0].id as string | number;
     } else {
-      const source = connection.originPosting ? "market-posting" : "network-connection";
+      const source = connection.originDeclaration ? "diaspora-bridge" : connection.originPosting ? "market-posting" : "network-connection";
       const contactDoc = await payload.create({
         collection: "crm-contacts",
         data: {

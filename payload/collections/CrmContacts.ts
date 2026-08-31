@@ -63,6 +63,7 @@ export const CrmContacts: CollectionConfig = {
       options: [
         { label: "Network Connection", value: "network-connection" },
         { label: "Market Posting Response", value: "market-posting" },
+        { label: "Diaspora Bridge", value: "diaspora-bridge" },
         { label: "Manual Entry", value: "manual" },
         { label: "Referral", value: "referral" },
         { label: "Other", value: "other" },

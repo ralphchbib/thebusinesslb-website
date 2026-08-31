@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import { readOwnConnection, createConnection, respondToConnection, denyDelete } from "../access-messaging";
+import { noUpdateAfterCreate } from "../access-trust";
 
 /**
  * Phase 12 — Blueprint v3 §34 "Business Circles": a mutual, two-sided
@@ -30,13 +31,28 @@ import { readOwnConnection, createConnection, respondToConnection, denyDelete } 
  * accept — is unchanged and applies identically either way
  * (PHASE13-TECHNICAL-DESIGN.md §H: "everything downstream is inherited
  * unmodified").
+ *
+ * Phase 18B — `originDeclaration` (nullable) records provenance when a
+ * connection was created by responding to a `diaspora-declarations` row
+ * (Blueprint §33), the exact `originPosting` precedent above applied a
+ * second time rather than reinvented (PHASE18B-TECHNICAL-DESIGN.md §D).
+ * `assistanceRequested` marks a request as wanting staff facilitation
+ * (§33's "assisted introductions") — a plain visibility flag on data staff
+ * already read via `readOwnConnection`'s existing carve-out, not a new
+ * write path. Both fields carry `noUpdateAfterCreate` field-level access:
+ * `respondToConnection`'s document-level update grant (given to the
+ * non-requesting participant while a request is pending) only gates
+ * whether an update is allowed at all, not which fields it may touch — so
+ * without this, the accepting party could silently alter either field
+ * during their own accept/decline action, which neither field's design
+ * permits (§D: "immutable after create").
  */
 export const Connections: CollectionConfig = {
   slug: "connections",
   labels: { singular: "Connection", plural: "Connections" },
   admin: {
     useAsTitle: "id",
-    defaultColumns: ["accountA", "accountB", "connectionType", "status", "createdAt"],
+    defaultColumns: ["accountA", "accountB", "connectionType", "status", "assistanceRequested", "createdAt"],
   },
   indexes: [{ fields: ["accountA", "accountB"], unique: true }],
   access: {
@@ -131,6 +147,20 @@ export const Connections: CollectionConfig = {
       type: "relationship",
       relationTo: "market-postings",
       admin: { description: "Phase 13 — set when this connection came from responding to a Market Posting rather than a direct profile Connect. Null otherwise." },
+    },
+    {
+      name: "originDeclaration",
+      type: "relationship",
+      relationTo: "diaspora-declarations",
+      access: { update: noUpdateAfterCreate },
+      admin: { description: "Phase 18B — set when this connection came from responding to a Diaspora Bridge declaration. Null otherwise. Immutable after create." },
+    },
+    {
+      name: "assistanceRequested",
+      type: "checkbox",
+      defaultValue: false,
+      access: { update: noUpdateAfterCreate },
+      admin: { description: "Phase 18B — the requester wants THE BUSINESS's help facilitating this introduction (Blueprint §33 \"assisted introductions\"). Visible to staff via this collection's existing read access; settable only at create, immutable after." },
     },
   ],
 };
