@@ -56,6 +56,18 @@ export const Connections: CollectionConfig = {
             data.accountB = a;
           }
         }
+        // PHASE12-CONNECTIONS-REMEDIATION-PLAN.md §Fix, Layer 2 —
+        // unconditionally forced to "pending" on every create, independent
+        // of `createConnection`'s own equivalent rejection (Layer 1) in
+        // access-messaging.ts. Defense-in-depth: any future internal
+        // writer that ever calls `payload.create` on this collection with
+        // `overrideAccess: true` still cannot produce a non-pending row,
+        // because this hook runs regardless of `overrideAccess` — the
+        // identical reasoning `InstitutionMemberships.ts`'s own Layer 2
+        // fix already documents.
+        if (operation === "create" && data) {
+          data.status = "pending";
+        }
         return data;
       },
     ],
