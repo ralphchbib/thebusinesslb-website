@@ -1,5 +1,6 @@
 import type { Access } from "payload";
 import { isStaff, isNetworkAccount } from "./access-network";
+import { getEntitlements } from "./entitlements";
 
 /**
  * Phase 17 — access control for market-insight-snapshots (Blueprint §37,
@@ -16,20 +17,29 @@ import { isStaff, isNetworkAccount } from "./access-network";
  * Instead it is a *tier* gate: `tier: "public"` rows are readable by
  * anyone, including anonymous visitors (they back the public
  * `/network/market-pulse` page); `tier: "institutional"` rows require the
- * viewer to be a network account with `accountType: "institution"` AND a
- * staff-granted `marketPulseAccessGranted` flag (see NetworkAccounts.ts).
- * Staff can always read everything, for support/QA.
+ * viewer to be a network account with `accountType: "institution"` AND the
+ * `marketPulse.institutionalDashboard` entitlement (Phase 19 —
+ * PHASE19-TECHNICAL-DESIGN.md §G, resolved from `plan: "institution-
+ * premium"`; see payload/entitlements.ts). Staff can always read
+ * everything, for support/QA.
+ *
+ * Phase 19 — this function no longer reads `marketPulseAccessGranted`
+ * directly; that field is deprecated (see NetworkAccounts.ts) in favor of
+ * the general entitlement resolver. Confirmed against production data
+ * before this cutover that no account had the old flag set, so this is a
+ * clean behavioral swap, not a dual-path migration.
  */
 
 export function hasInstitutionalMarketPulseAccess(
-  user: { accountType?: string; marketPulseAccessGranted?: boolean } | null | undefined,
+  user: { accountType?: string; plan?: string | null } | null | undefined,
 ): boolean {
-  return Boolean(user && user.accountType === "institution" && user.marketPulseAccessGranted === true);
+  if (!user || user.accountType !== "institution") return false;
+  return getEntitlements(user.plan, user.accountType).marketPulse.institutionalDashboard;
 }
 
 export const readMarketInsightSnapshots: Access = ({ req: { user } }) => {
   if (isStaff(user)) return true;
-  if (isNetworkAccount(user) && hasInstitutionalMarketPulseAccess(user as { accountType?: string; marketPulseAccessGranted?: boolean })) {
+  if (isNetworkAccount(user) && hasInstitutionalMarketPulseAccess(user as { accountType?: string; plan?: string | null })) {
     return true;
   }
   return { tier: { equals: "public" } };

@@ -12,6 +12,7 @@ export interface BusinessProfileListItem {
   languages: string[];
   logoUrl?: string;
   verified: boolean;
+  sponsored: boolean;
 }
 
 export interface BusinessProfileListResult {
@@ -64,7 +65,11 @@ export async function getPublishedBusinessProfiles(
     where: { and },
     page: filters.page ?? 1,
     limit: 12,
-    sort: "-createdAt",
+    // Phase 19 — Blueprint §44 "Visibility Revenue": a sponsored profile
+    // sorts first, same-tier ties broken by recency. This is a visible,
+    // labeled prioritization (see SponsoredBadge on every card it affects),
+    // not the "secretly depend only on payment" ranking §56 forbids.
+    sort: ["-sponsored", "-createdAt"],
   });
 
   return {
@@ -79,6 +84,7 @@ export async function getPublishedBusinessProfiles(
       languages: (doc.languages as string[]) ?? [],
       logoUrl: typeof doc.logo === "object" ? (doc.logo as { url?: string })?.url : undefined,
       verified: Boolean(doc.verified),
+      sponsored: Boolean(doc.sponsored),
     })),
     page: result.page ?? 1,
     totalPages: result.totalPages ?? 1,

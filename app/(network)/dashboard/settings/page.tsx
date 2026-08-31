@@ -1,13 +1,23 @@
 import type { Metadata } from "next";
 import { getNetworkUser } from "@/lib/network/session";
+import { PLAN_OPTIONS } from "@/lib/network/entitlements";
 import { ChangePasswordForm } from "@/components/network/change-password-form";
 import { ChangeEmailForm } from "@/components/network/change-email-form";
 import { NotificationSettingsForm } from "@/components/network/notification-settings-form";
+
+const FREE_PLAN_LABEL_BY_ACCOUNT_TYPE: Record<string, string> = {
+  business: "Business Free",
+  professional: "Professional Free",
+  institution: "Institution Standard",
+};
 
 export const metadata: Metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
   const user = await getNetworkUser();
+  const planLabel = user?.plan
+    ? (PLAN_OPTIONS.find((p) => p.value === user.plan)?.label ?? user.plan)
+    : (user && FREE_PLAN_LABEL_BY_ACCOUNT_TYPE[user.accountType]) || null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -18,10 +28,16 @@ export default async function SettingsPage() {
             <dt className="text-n500">Email</dt>
             <dd className="text-ink">{user?.email}</dd>
           </div>
-          <div className="flex justify-between pb-2">
+          <div className="flex justify-between border-b border-n200 pb-2">
             <dt className="text-n500">Account type</dt>
             <dd className="capitalize text-ink">{user?.accountType}</dd>
           </div>
+          {planLabel && (
+            <div className="flex justify-between pb-2">
+              <dt className="text-n500">Plan</dt>
+              <dd className="text-ink">{planLabel}</dd>
+            </div>
+          )}
         </dl>
       </div>
 

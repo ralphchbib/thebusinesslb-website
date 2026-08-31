@@ -51,7 +51,9 @@ export type NetworkUser = {
   diasporaCountry?: string | null;
   status: "active" | "suspended";
   messageEmailNotifications?: boolean;
+  /** Deprecated as of Phase 19 — see NetworkAccounts.ts. Superseded by `plan` below. */
   marketPulseAccessGranted?: boolean;
+  plan?: string | null;
 };
 
 /**

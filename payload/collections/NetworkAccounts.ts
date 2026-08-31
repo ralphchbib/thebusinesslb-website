@@ -1,6 +1,7 @@
 import type { CollectionConfig, Endpoint, PayloadHandler } from "payload";
 import { adminOnly } from "../access";
 import { ownAccountOrStaff, staffOnlyCreate, staffOnlyField } from "../access-network";
+import { PLAN_OPTIONS, assertPlanEligibility } from "../entitlements";
 import { siteConfig } from "@/lib/config";
 
 /**
@@ -61,7 +62,7 @@ export const NetworkAccounts: CollectionConfig = {
   admin: {
     hidden: true,
     useAsTitle: "email",
-    defaultColumns: ["email", "accountType", "status"],
+    defaultColumns: ["email", "accountType", "status", "plan"],
   },
   endpoints: blockedAuthEndpoints,
   auth: {
@@ -106,6 +107,25 @@ export const NetworkAccounts: CollectionConfig = {
         }
       },
     ],
+    beforeValidate: [
+      // Phase 19 — PHASE19-TECHNICAL-DESIGN.md §D: a `plan` value must
+      // actually be eligible for this account's own `accountType` (a
+      // `professional-pro` value on a `business` account is rejected the
+      // same way a diaspora-side declaration value is rejected on a
+      // business account in `DiasporaDeclarations.ts`). Runs regardless of
+      // operation — `accountType` never changes after create in practice
+      // (its own field access is staff-only-after-create), but `plan` can
+      // change many times over an account's lifetime, and each change gets
+      // re-validated against whatever `accountType` the document actually
+      // has, not just at create.
+      ({ data, originalDoc }) => {
+        if (!data) return data;
+        if (data.plan === undefined) return data;
+        const accountType = data.accountType ?? originalDoc?.accountType;
+        assertPlanEligibility(accountType, data.plan);
+        return data;
+      },
+    ],
     beforeChange: [
       // Phase 17 — PHASE17-TECHNICAL-DESIGN.md §F/§G: auto-stamps the audit
       // trail when staff grants/revokes institutional Market Pulse access,
@@ -114,6 +134,14 @@ export const NetworkAccounts: CollectionConfig = {
       // (its `access.update: noUpdateAfterCreate` field guard is what makes
       // this the ONLY path either field can ever change through — staff
       // toggles `marketPulseAccessGranted`, never these two directly).
+      //
+      // PHASE19-TECHNICAL-DESIGN.md §C/§D — deprecated in favor of `plan`/
+      // `planGrantedAt`/`planGrantedBy` below (the entitlement gate in
+      // access-market-pulse.ts no longer consults this field at all — see
+      // that file's own header), but left in the schema rather than
+      // dropped, since no destructive schema change is needed to retire it
+      // and a staff member reading an old audit trail should still see
+      // when/who last touched it.
       ({ data, originalDoc, operation, req }) => {
         if (operation !== "update") return data;
         const nextGranted = data?.marketPulseAccessGranted;
@@ -132,6 +160,21 @@ export const NetworkAccounts: CollectionConfig = {
           data.marketPulseAccessGrantedAt = null;
           data.marketPulseAccessGrantedBy = null;
         }
+        return data;
+      },
+      // Phase 19 — PHASE19-TECHNICAL-DESIGN.md §D: the same audit-trail
+      // shape, generalized to the new `plan` field. `planGrantedAt`/
+      // `planGrantedBy`'s own `access.update: () => false` guards are what
+      // make this the ONLY path either field can ever change through.
+      ({ data, originalDoc, operation, req }) => {
+        if (operation !== "update") return data;
+        const nextPlan = data?.plan;
+        if (nextPlan === undefined) return data;
+        const prevPlan = originalDoc?.plan ?? null;
+        if (nextPlan === prevPlan) return data;
+        const actingUser = req.user as unknown as { collection?: string; id?: string | number } | null | undefined;
+        data.planGrantedAt = new Date().toISOString();
+        data.planGrantedBy = actingUser?.collection === "users" ? actingUser.id : null;
         return data;
       },
     ],
@@ -203,21 +246,43 @@ export const NetworkAccounts: CollectionConfig = {
       defaultValue: false,
       access: { update: staffOnlyField },
       admin: {
-        description: "Phase 17 — Blueprint §37 \"Paid Institutional Dashboards.\" Staff-granted only (no self-service, no billing integration in this phase — see PHASE17-TECHNICAL-DESIGN.md §F). Only meaningful when accountType is 'institution'; the read-access gate in access-market-pulse.ts checks both.",
+        description: "Phase 17 — Blueprint §37 \"Paid Institutional Dashboards.\" DEPRECATED as of Phase 19 — superseded by `plan: \"institution-premium\"` below; access-market-pulse.ts no longer reads this field. Left in the schema for its historical audit trail only, not dropped.",
       },
     },
     {
       name: "marketPulseAccessGrantedAt",
       type: "date",
       access: { update: () => false },
-      admin: { description: "Set automatically when a staff member checks marketPulseAccessGranted above — never client-writable directly, including by staff. Audit trail." },
+      admin: { description: "Deprecated alongside marketPulseAccessGranted above — see that field's description." },
     },
     {
       name: "marketPulseAccessGrantedBy",
       type: "relationship",
       relationTo: "users",
       access: { update: () => false },
-      admin: { description: "The staff user who granted institutional Market Pulse access — set automatically, never client-writable directly. Audit trail." },
+      admin: { description: "Deprecated alongside marketPulseAccessGranted above — see that field's description." },
+    },
+    {
+      name: "plan",
+      type: "select",
+      options: [...PLAN_OPTIONS],
+      access: { update: staffOnlyField },
+      admin: {
+        description: "Phase 19 — Blueprint §43 \"Membership Plans\" / §37 \"Paid Institutional Dashboards.\" Staff-granted only (no self-service, no billing integration in this phase — see PHASE19-TECHNICAL-DESIGN.md §C). Must be eligible for this account's own accountType — enforced server-side in beforeValidate, never trusted from client input. Left unset (null), a `business`/`professional`/`institution` account resolves to its own free/standard default via payload/entitlements.ts's getEntitlements — a `consumer`/`diaspora` account resolves to no plan at all, matching Blueprint §43's own plan table, which names neither.",
+      },
+    },
+    {
+      name: "planGrantedAt",
+      type: "date",
+      access: { update: () => false },
+      admin: { description: "Set automatically when staff changes `plan` above — never client-writable directly, including by staff. Audit trail." },
+    },
+    {
+      name: "planGrantedBy",
+      type: "relationship",
+      relationTo: "users",
+      access: { update: () => false },
+      admin: { description: "The staff user who last changed `plan` — set automatically, never client-writable directly. Audit trail." },
     },
   ],
 };
