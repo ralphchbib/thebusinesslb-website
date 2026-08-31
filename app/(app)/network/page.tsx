@@ -40,7 +40,7 @@ export default function NetworkHubPage() {
       </Section>
 
       <Section surface="mist">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           <Card className="h-full bg-white">
             <Link href="/network/businesses" className="flex h-full flex-col">
               <h3 className="text-lg font-semibold text-ink">Business Directory</h3>
@@ -71,6 +71,17 @@ export default function NetworkHubPage() {
               </p>
               <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-petrol">
                 Browse opportunities <ArrowRight className="h-3.5 w-3.5" />
+              </span>
+            </Link>
+          </Card>
+          <Card className="h-full bg-white">
+            <Link href="/network/diaspora-bridge" className="flex h-full flex-col">
+              <h3 className="text-lg font-semibold text-ink">Diaspora Bridge</h3>
+              <p className="mt-3 flex-1 text-sm leading-relaxed text-n600">
+                Connect Lebanese businesses with diaspora members worldwide — Blueprint §33 Diaspora Bridge.
+              </p>
+              <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-petrol">
+                Browse the Bridge <ArrowRight className="h-3.5 w-3.5" />
               </span>
             </Link>
           </Card>

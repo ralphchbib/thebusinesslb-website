@@ -64,6 +64,13 @@ import { DashboardNav } from "@/components/network/dashboard-nav";
  * gate-not-enforcement relationship as Leads above — `/dashboard/
  * institution*` routes redirect independently, and `access-institution.ts`
  * scopes reads/writes regardless of what the nav shows.
+ *
+ * Phase 18B — "Diaspora Bridge" is added for business/professional/
+ * diaspora accounts (`hasProfile || accountType === "diaspora"`) — the
+ * exact eligibility set `payload/diaspora-eligibility.ts` enforces
+ * server-side (PHASE18B-TECHNICAL-DESIGN.md §C). Institution and consumer
+ * accounts don't get this nav item, same convenience-gate-not-enforcement
+ * relationship as every other account-type-scoped item above.
  */
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getNetworkUser();
@@ -89,6 +96,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     { href: "/dashboard/connections", label: "Connections" },
     { href: "/dashboard/messages", label: user.accountType === "business" ? "Inbox" : "Messages", badge: unreadCount },
     { href: "/dashboard/opportunities", label: "Opportunities" },
+    ...(hasProfile || user.accountType === "diaspora" ? [{ href: "/dashboard/diaspora-bridge", label: "Diaspora Bridge" }] : []),
     ...(user.accountType === "business" ? [{ href: "/dashboard/leads", label: "Leads" }] : []),
     ...(hasProfile ? [{ href: "/dashboard/institutions", label: "Institutions" }] : []),
     ...(user.accountType === "institution" ? [{ href: "/dashboard/institution", label: "Institution" }] : []),
