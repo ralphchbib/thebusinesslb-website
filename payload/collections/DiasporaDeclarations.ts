@@ -39,6 +39,23 @@ export const DiasporaDeclarations: CollectionConfig = {
     beforeValidate: [
       async ({ data, operation, req, originalDoc }) => {
         if (!data) return data;
+        // PHASE18B-REMEDIATION-PLAN.md §Fix 1, Layer 2 — self-authorship
+        // re-checked here, independent of `createOwnDeclaration`'s own
+        // equivalent rejection (Layer 1) in access-diaspora.ts. Defense-in-
+        // depth: any future internal writer that ever calls `payload.create`
+        // on this collection with `overrideAccess: true`, while still
+        // carrying a real `network-accounts` actor on `req.user` (as
+        // opposed to a fully trusted, user-less system script), still
+        // cannot produce a row attributed to a different account than the
+        // one actually making the request — the same reasoning the
+        // `InstitutionMemberships`/`Connections` remediations already
+        // applied to their own create-time bypasses.
+        if (operation === "create") {
+          const actingUser = req.user as { collection?: string; id?: unknown } | null | undefined;
+          if (actingUser?.collection === "network-accounts" && String(actingUser.id) !== String(data.account)) {
+            throw new Error("You can only declare on your own behalf.");
+          }
+        }
         if (operation === "create" || data.declarations !== undefined) {
           const accountId = data.account ?? (originalDoc as { account?: unknown } | undefined)?.account;
           await assertDeclarationEligibility({ req, accountId, declarations: data.declarations ?? (originalDoc as { declarations?: unknown } | undefined)?.declarations });
