@@ -17,6 +17,7 @@ export interface MarketPostingListItem {
   ownerName: string;
   ownerId: number;
   createdAt: string;
+  featured: boolean;
 }
 
 export interface MarketPostingListResult {
@@ -49,6 +50,7 @@ function toListItem(doc: Record<string, unknown>): MarketPostingListItem {
     ownerName: typeof owner === "object" && owner ? String(owner.name ?? "Unknown") : "Unknown",
     ownerId: Number(typeof owner === "object" && owner ? owner.id : owner),
     createdAt: doc.createdAt as string,
+    featured: Boolean(doc.featured),
   };
 }
 
@@ -79,7 +81,11 @@ export async function getPublishedPostings(filters: MarketPostingFilters): Promi
     where: { and },
     page: filters.page ?? 1,
     limit: 12,
-    sort: "-createdAt",
+    // Phase 19 — Blueprint §44 "Visibility Revenue": a featured posting
+    // sorts first, same-tier ties broken by recency — visible, labeled
+    // prioritization (see FeaturedBadge on every card it affects), not the
+    // "secretly depend only on payment" ranking §56 forbids.
+    sort: ["-featured", "-createdAt"],
     depth: 1,
     overrideAccess: true,
   });

@@ -277,3 +277,52 @@ export async function getCrmPipelineStats(ownerId: string | number): Promise<Crm
   const winRate = closed > 0 ? countByStage.won / closed : null;
   return { countByStage, winRate };
 }
+
+export interface CrmAdvancedAnalytics {
+  averageDaysToClose: number | null;
+  sourceBreakdown: Record<string, number>;
+}
+
+/**
+ * Phase 19 — PHASE19-TECHNICAL-DESIGN.md §F: gated behind the
+ * `crm.advancedAnalytics` entitlement (`business-growth`/`premium-partner`
+ * plans), never behind the free CRM Lite surface `getCrmPipeline`/
+ * `getCrmPipelineStats` above serve — those stay unconditionally free per
+ * the design's own explicit "the shipped CRM Lite surface stays free"
+ * decision. This is genuinely new reporting, not a re-gating of anything
+ * that already shipped.
+ */
+export async function getCrmAdvancedAnalytics(ownerId: string | number): Promise<CrmAdvancedAnalytics> {
+  const payload = await getCms();
+
+  const closedLeads = await payload.find({
+    collection: "crm-leads",
+    where: { and: [{ owner: { equals: ownerId } }, { stage: { in: ["won", "lost"] } }, { closedAt: { exists: true } }] },
+    depth: 0,
+    limit: 500,
+    overrideAccess: true,
+  });
+  const daysToClose = closedLeads.docs
+    .map((doc) => {
+      const created = new Date(doc.createdAt as string).getTime();
+      const closed = new Date(doc.closedAt as string).getTime();
+      return (closed - created) / (1000 * 60 * 60 * 24);
+    })
+    .filter((days) => Number.isFinite(days) && days >= 0);
+  const averageDaysToClose = daysToClose.length > 0 ? daysToClose.reduce((sum, d) => sum + d, 0) / daysToClose.length : null;
+
+  const contacts = await payload.find({
+    collection: "crm-contacts",
+    where: { owner: { equals: ownerId } },
+    depth: 0,
+    limit: 500,
+    overrideAccess: true,
+  });
+  const sourceBreakdown: Record<string, number> = {};
+  for (const doc of contacts.docs) {
+    const source = (doc.source as string) || "unknown";
+    sourceBreakdown[source] = (sourceBreakdown[source] ?? 0) + 1;
+  }
+
+  return { averageDaysToClose, sourceBreakdown };
+}

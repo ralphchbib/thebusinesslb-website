@@ -1,15 +1,19 @@
 import type { CollectionConfig } from "payload";
 import { readPostings, createPosting, updateOwnPosting, statusTransitionFieldAccess, deleteOwnPosting } from "../access-market";
-import { noUpdateAfterCreate } from "../access-trust";
+import { noUpdateAfterCreate, staffOnlyTrustField } from "../access-trust";
+import { assertFeaturedListingEligibility } from "../entitlements";
 
 /**
  * Phase 13 — Blueprint §18 "Offer and Need Exchange" (PHASE13-TECHNICAL-
  * DESIGN.md §G/§H/§I): a structured listing an account posts to say what
- * it offers or needs. Deliberately an MVP subset of §18 — no featured/
- * priority-matching paid tiers (no billing infrastructure exists anywhere
- * in this codebase yet), no proactive Opportunity Radar alerting (§19), no
- * Collaboration Builder multi-role project assembly (§20). Just a
- * browsable, filterable board plus a Respond action.
+ * it offers or needs. Originally an MVP subset of §18 with no featured/
+ * priority-matching paid tiers (no billing infrastructure existed
+ * anywhere in this codebase at the time) — Phase 19 adds `featured` below,
+ * per PHASE19-TECHNICAL-DESIGN.md §F/§J, still with no billing
+ * infrastructure (staff-granted only, gated by the owner's own
+ * entitlement). No proactive Opportunity Radar alerting (§19), no
+ * Collaboration Builder multi-role project assembly (§20) — still out of
+ * scope. Just a browsable, filterable board plus a Respond action.
  *
  * `owner` is a direct `network-accounts` relationship, not a polymorphic
  * profile reference — a posting belongs to the account itself, the same
@@ -36,7 +40,7 @@ export const MarketPostings: CollectionConfig = {
   labels: { singular: "Market Posting", plural: "Market Postings" },
   admin: {
     useAsTitle: "title",
-    defaultColumns: ["title", "postingType", "owner", "status", "createdAt"],
+    defaultColumns: ["title", "postingType", "owner", "status", "featured", "createdAt"],
   },
   indexes: [{ fields: ["postingType", "status"] }],
   access: {
@@ -44,6 +48,34 @@ export const MarketPostings: CollectionConfig = {
     create: createPosting,
     update: updateOwnPosting,
     delete: deleteOwnPosting,
+  },
+  hooks: {
+    beforeValidate: [
+      // Phase 19 — PHASE19-TECHNICAL-DESIGN.md §F/§J: `featured` may only be
+      // set true when the posting's own owner currently holds the
+      // `visibility.featuredListing` entitlement — re-checked here
+      // server-side rather than trusted from whatever the (staff-only)
+      // caller believes, the same "never trust a client-supplied claim,
+      // resolve it server-side" discipline `assertDeclarationEligibility`/
+      // `assertAccountType` already established. This only runs when
+      // `featured` is actually being changed to `true` — leaving it
+      // unset/false, or clearing an existing true back to false, never
+      // needs the owner's entitlement re-verified.
+      async ({ data, req, originalDoc }) => {
+        if (!data) return data;
+        const nextFeatured = data.featured;
+        const prevFeatured = (originalDoc as { featured?: boolean } | undefined)?.featured ?? false;
+        if (nextFeatured === undefined || nextFeatured === prevFeatured) return data;
+        if (nextFeatured === false) {
+          data.featuredAt = null;
+          return data;
+        }
+        const ownerId = data.owner ?? (originalDoc as { owner?: unknown } | undefined)?.owner;
+        await assertFeaturedListingEligibility({ req, ownerId });
+        data.featuredAt = new Date().toISOString();
+        return data;
+      },
+    ],
   },
   fields: [
     {
@@ -87,6 +119,21 @@ export const MarketPostings: CollectionConfig = {
       name: "expiresAt",
       type: "date",
       admin: { description: "Optional. Past-due postings are excluded from public browse at read time (no cron/scheduled job) even if `status` is still 'active'." },
+    },
+    {
+      name: "featured",
+      type: "checkbox",
+      defaultValue: false,
+      access: { update: staffOnlyTrustField },
+      admin: {
+        description: "Phase 19 — Blueprint §44 \"Visibility Revenue\" / Blueprint §56 \"Sponsored placement must be visibly labeled.\" Staff-set only, and only when the owner's own plan includes the `visibility.featuredListing` entitlement (re-verified server-side on every change, not trusted from the caller). Rendered with a visible \"Featured\" badge and a separate section wherever postings are listed — never a silent ranking boost.",
+      },
+    },
+    {
+      name: "featuredAt",
+      type: "date",
+      access: { update: () => false },
+      admin: { description: "Set automatically when `featured` is turned on above — never client-writable directly, including by staff. Audit trail." },
     },
   ],
 };

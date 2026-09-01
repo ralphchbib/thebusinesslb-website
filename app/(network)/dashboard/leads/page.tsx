@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getNetworkUser } from "@/lib/network/session";
-import { getCrmPipeline, getCrmPipelineStats } from "@/lib/network/crm";
+import { getCrmPipeline, getCrmPipelineStats, getCrmAdvancedAnalytics } from "@/lib/network/crm";
+import { getEntitlements } from "@/lib/network/entitlements";
 import { LeadStageControl } from "@/components/network/crm/lead-stage-control";
 import { Badge } from "@/components/ui/badge";
 import type { CrmLeadStage } from "@/lib/network/crm-actions";
@@ -34,6 +35,8 @@ export default async function LeadsPage() {
   if (user.accountType !== "business") redirect("/dashboard");
 
   const [pipeline, stats] = await Promise.all([getCrmPipeline(user.id), getCrmPipelineStats(user.id)]);
+  const entitlements = getEntitlements(user.plan, user.accountType);
+  const advancedAnalytics = entitlements.crm.advancedAnalytics ? await getCrmAdvancedAnalytics(user.id) : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -66,6 +69,39 @@ export default async function LeadsPage() {
             Follow-up tasks
           </Link>
         </div>
+      </div>
+
+      <div className="rounded-lg border border-n200 bg-white p-8">
+        <h2 className="text-lg font-semibold text-ink">Advanced Analytics</h2>
+        {advancedAnalytics ? (
+          <div className="mt-3 flex flex-wrap gap-6 text-[13px] text-n600">
+            <span>
+              Average days to close:{" "}
+              <strong className="text-ink">
+                {advancedAnalytics.averageDaysToClose !== null ? Math.round(advancedAnalytics.averageDaysToClose) : "—"}
+              </strong>
+            </span>
+            <div>
+              <span className="text-n600">Lead source breakdown: </span>
+              {Object.entries(advancedAnalytics.sourceBreakdown).length === 0 ? (
+                <strong className="text-ink">No contacts yet</strong>
+              ) : (
+                Object.entries(advancedAnalytics.sourceBreakdown).map(([source, count], i, arr) => (
+                  <span key={source}>
+                    <strong className="text-ink">
+                      {source} ({count})
+                    </strong>
+                    {i < arr.length - 1 ? ", " : ""}
+                  </span>
+                ))
+              )}
+            </div>
+          </div>
+        ) : (
+          <p className="mt-2 text-[13px] text-n500">
+            Upgrade to Business Growth to unlock average time-to-close and lead source breakdown reporting.
+          </p>
+        )}
       </div>
 
       <div className="grid gap-4 overflow-x-auto pb-2" style={{ gridTemplateColumns: `repeat(${STAGE_COLUMNS.length}, minmax(220px, 1fr))` }}>

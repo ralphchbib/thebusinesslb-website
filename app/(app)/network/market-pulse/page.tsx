@@ -60,10 +60,11 @@ function InsightCard({ insight }: { insight: MarketPulseInsight }) {
  * One page, tiered by viewer: the Public Insights section renders for
  * everyone, including anonymous visitors; the Institutional section below
  * it renders only for a logged-in network account with
- * `accountType: "institution"` and a staff-granted
- * `marketPulseAccessGranted`. No separate `/dashboard/market-pulse` route —
- * a single page avoids duplicating the same rendering logic across two
- * templates for what is, at the data layer, one gated read.
+ * `accountType: "institution"` and the `marketPulse.institutionalDashboard`
+ * entitlement (Phase 19 — PHASE19-TECHNICAL-DESIGN.md §G, resolved from
+ * `plan: "institution-premium"`). No separate `/dashboard/market-pulse`
+ * route — a single page avoids duplicating the same rendering logic across
+ * two templates for what is, at the data layer, one gated read.
  */
 export default async function MarketPulsePage() {
   const user = await getNetworkUser();

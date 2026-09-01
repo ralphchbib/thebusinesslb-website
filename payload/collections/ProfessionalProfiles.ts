@@ -2,18 +2,21 @@ import type { CollectionConfig } from "payload";
 import { readPublishedOrOwnerOrStaff, createProfessionalProfile, updateOrDeleteByOwnerOrStaff } from "../access-profiles";
 import { staffOnlyTrustField } from "../access-trust";
 import { LANGUAGE_OPTIONS } from "../language-options";
+import { assertSponsoredVisibilityEligibility } from "../entitlements";
 
 /**
  * Phase 9B — a Professional-account's public profile. Same shape and
  * reasoning as BusinessProfiles.ts (one per account, enforced in the
- * Server Action; draft/publish via versions.drafts).
+ * Server Action; draft/publish via versions.drafts) — including Phase
+ * 19's `sponsored` field and its owner-entitlement hook, see that file's
+ * own comment for why.
  */
 export const ProfessionalProfiles: CollectionConfig = {
   slug: "professional-profiles",
   labels: { singular: "Professional Profile", plural: "Professional Profiles" },
   admin: {
     useAsTitle: "name",
-    defaultColumns: ["name", "title", "slug", "_status"],
+    defaultColumns: ["name", "title", "slug", "_status", "sponsored"],
   },
   versions: {
     drafts: true,
@@ -23,6 +26,28 @@ export const ProfessionalProfiles: CollectionConfig = {
     create: createProfessionalProfile,
     update: updateOrDeleteByOwnerOrStaff,
     delete: updateOrDeleteByOwnerOrStaff,
+  },
+  hooks: {
+    beforeValidate: [
+      // Phase 19 — see BusinessProfiles.ts's identical hook for the full
+      // reasoning; duplicated rather than shared across collections
+      // because Payload hooks are collection-scoped, not because the logic
+      // itself differs.
+      async ({ data, req, originalDoc }) => {
+        if (!data) return data;
+        const nextSponsored = data.sponsored;
+        const prevSponsored = (originalDoc as { sponsored?: boolean } | undefined)?.sponsored ?? false;
+        if (nextSponsored === undefined || nextSponsored === prevSponsored) return data;
+        if (nextSponsored === false) {
+          data.sponsoredAt = null;
+          return data;
+        }
+        const ownerId = data.owner ?? (originalDoc as { owner?: unknown } | undefined)?.owner;
+        await assertSponsoredVisibilityEligibility({ req, ownerId });
+        data.sponsoredAt = new Date().toISOString();
+        return data;
+      },
+    ],
   },
   fields: [
     {
@@ -98,6 +123,21 @@ export const ProfessionalProfiles: CollectionConfig = {
       name: "verifiedAt",
       type: "date",
       access: { update: staffOnlyTrustField },
+    },
+    {
+      name: "sponsored",
+      type: "checkbox",
+      defaultValue: false,
+      access: { update: staffOnlyTrustField },
+      admin: {
+        description: "Phase 19 — Blueprint §44 \"Visibility Revenue\" / Blueprint §56 \"Sponsored placement must be visibly labeled.\" Staff-set only, and only when the owner's own plan includes the `visibility.sponsoredVisibility` entitlement (re-verified server-side on every change). Rendered with a visible \"Sponsored\" badge wherever this profile appears in a directory listing — never a silent ranking boost.",
+      },
+    },
+    {
+      name: "sponsoredAt",
+      type: "date",
+      access: { update: () => false },
+      admin: { description: "Set automatically when `sponsored` is turned on above — never client-writable directly, including by staff. Audit trail." },
     },
   ],
 };

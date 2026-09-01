@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PostingFilterForm } from "@/components/network/posting-filter-form";
 import { Pagination } from "@/components/network/pagination";
+import { FeaturedBadge } from "@/components/network/featured-badge";
 
 export const metadata: Metadata = buildMetadata({
   title: "Opportunities | THE BUSINESS lb",
@@ -69,6 +70,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
                     <Badge variant={posting.postingType === "offer" ? "petrol" : "neutral"}>
                       {posting.postingType === "offer" ? "Offer" : "Need"}
                     </Badge>
+                    {posting.featured && <FeaturedBadge />}
                     {posting.category && <span className="text-[12px] text-n500">{posting.category}</span>}
                   </div>
                   <h3 className="mt-2 text-lg font-semibold text-ink">{posting.title}</h3>

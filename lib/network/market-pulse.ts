@@ -1,5 +1,6 @@
 import "server-only";
 import { getCms } from "@/lib/cms/client";
+import { getEntitlements } from "@/payload/entitlements";
 import { computeAllMarketPulseSnapshots } from "./market-pulse-engine";
 
 /**
@@ -17,14 +18,20 @@ import { computeAllMarketPulseSnapshots } from "./market-pulse-engine";
 const STALE_AFTER_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Mirrors `payload/access-market-pulse.ts`'s `hasInstitutionalMarketPulseAccess`
- * exactly — duplicated rather than imported, since `app/` pages don't reach
- * into `payload/access-*.ts` modules anywhere else in this codebase (that
- * layer is for collection-level Access functions; `lib/network/*.ts` is
- * what pages call). Keep both in sync if this check ever changes.
+ * Phase 19 — previously a hand-duplicated copy of
+ * `payload/access-market-pulse.ts`'s own function (that file's own header
+ * explains why it *used* to be duplicated rather than imported). Now a
+ * thin re-export of `payload/entitlements.ts`'s pure resolver instead —
+ * `payload/entitlements.ts` is a plain data/function utility, not an
+ * Access-control module, so importing it from `lib/network/*.ts` doesn't
+ * cross the layering boundary the old comment was protecting (the same
+ * precedent `lib/validation/profile-schemas.ts` already set importing
+ * `payload/language-options.ts`). This removes the "keep both in sync"
+ * duplication risk entirely rather than updating two copies in parallel.
  */
-export function hasInstitutionalMarketPulseAccess(user: { accountType?: string; marketPulseAccessGranted?: boolean } | null | undefined): boolean {
-  return Boolean(user && user.accountType === "institution" && user.marketPulseAccessGranted === true);
+export function hasInstitutionalMarketPulseAccess(user: { accountType?: string; plan?: string | null } | null | undefined): boolean {
+  if (!user || user.accountType !== "institution") return false;
+  return getEntitlements(user.plan, user.accountType).marketPulse.institutionalDashboard;
 }
 
 export interface MarketPulseBucket {

@@ -12,6 +12,7 @@ export interface ProfessionalProfileListItem {
   languages: string[];
   photoUrl?: string;
   verified: boolean;
+  sponsored: boolean;
 }
 
 export interface ProfessionalProfileListResult {
@@ -63,7 +64,8 @@ export async function getPublishedProfessionalProfiles(
     where: { and },
     page: filters.page ?? 1,
     limit: 12,
-    sort: "-createdAt",
+    // Phase 19 — same visible, labeled prioritization as business-profiles.ts.
+    sort: ["-sponsored", "-createdAt"],
   });
 
   return {
@@ -78,6 +80,7 @@ export async function getPublishedProfessionalProfiles(
       languages: (doc.languages as string[]) ?? [],
       photoUrl: typeof doc.photo === "object" ? (doc.photo as { url?: string })?.url : undefined,
       verified: Boolean(doc.verified),
+      sponsored: Boolean(doc.sponsored),
     })),
     page: result.page ?? 1,
     totalPages: result.totalPages ?? 1,

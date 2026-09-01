@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { DirectoryFilterForm } from "@/components/network/directory-filter-form";
 import { Pagination } from "@/components/network/pagination";
 import { VerifiedBadge } from "@/components/network/verified-badge";
+import { SponsoredBadge } from "@/components/network/sponsored-badge";
 import { SaveSearchButton } from "@/components/network/save-search-button";
 
 export const metadata: Metadata = buildMetadata({
@@ -91,6 +92,7 @@ export default async function ProfessionalDirectoryPage({
                   <div className="flex items-center gap-2">
                     <h3 className="text-lg font-semibold text-ink">{pro.name}</h3>
                     {pro.verified && <VerifiedBadge />}
+                    {pro.sponsored && <SponsoredBadge />}
                   </div>
                   <p className="mt-1 text-sm font-medium text-petrol">{pro.title}</p>
                   <p className="mt-3 flex-1 text-sm leading-relaxed text-n600">{pro.bio}</p>
